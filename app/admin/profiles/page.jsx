@@ -6,6 +6,8 @@ import { getCurrentUser } from '@/lib/user-auth';
 import AdminLayoutClient from '../AdminLayoutClient';
 import ProfilesClient from './ProfilesClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Профили — Hoshizune Admin',
 };

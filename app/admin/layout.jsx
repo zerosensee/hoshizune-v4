@@ -4,6 +4,8 @@
  * AdminLayoutClient (боковое меню) добавляется в каждой странице отдельно,
  * чтобы страница /admin/login не получала боковую навигацию.
  */
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: {
     template: '%s — Hoshizune Admin',

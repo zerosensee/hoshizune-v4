@@ -5,6 +5,8 @@ import { getDbSettings } from '@/lib/database';
 import AdminLayoutClient from '../AdminLayoutClient';
 import SettingsClient from './SettingsClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Настройки — Hoshizune Admin',
 };

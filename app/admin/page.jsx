@@ -11,6 +11,8 @@ import {
 import AdminLayoutClient from './AdminLayoutClient';
 import AdminDashboardClient from './AdminDashboardClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Дашборд — Hoshizune Admin',
 };

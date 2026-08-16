@@ -8,6 +8,8 @@ import {
 import AdminLayoutClient from '../AdminLayoutClient';
 import LinksClient from './LinksClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Ссылки — Hoshizune Admin',
 };

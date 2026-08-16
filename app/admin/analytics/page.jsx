@@ -8,6 +8,8 @@ import {
 import AdminLayoutClient from '../AdminLayoutClient';
 import AnalyticsClient from './AnalyticsClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Аналитика — Hoshizune Admin',
 };

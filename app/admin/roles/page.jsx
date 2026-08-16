@@ -6,6 +6,8 @@ import { getCurrentUser } from '@/lib/user-auth';
 import AdminLayoutClient from '../AdminLayoutClient';
 import RolesClient from './RolesClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Роли и Титулы — Hoshizune Admin',
 };
