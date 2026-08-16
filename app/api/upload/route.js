@@ -103,7 +103,13 @@ export async function POST(request) {
     if (profileRow) {
       db.prepare('UPDATE profiles SET avatar_path = ? WHERE id = ?').run(avatarUrl, profileRow.id);
     }
-    db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatarUrl, user.id);
+    try {
+      db.prepare('UPDATE profiles SET avatar_path = ? WHERE user_id = ? OR LOWER(slug) = LOWER(?)').run(avatarUrl, user.id, user.displayName || '');
+    } catch {}
+
+    try {
+      db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatarUrl, user.id);
+    } catch {}
 
     return NextResponse.json({
       avatarPath: avatarUrl,

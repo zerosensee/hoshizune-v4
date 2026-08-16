@@ -15,12 +15,20 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const dropdownWidth = 220;
+
+      let top = rect.bottom + 6;
       let left = rect.left;
-      if (rect.left + dropdownWidth > window.innerWidth - 20) {
+
+      if (top + 200 > window.innerHeight) {
+        top = Math.max(10, rect.top - 210);
+      }
+
+      if (left + dropdownWidth > window.innerWidth - 10) {
         left = Math.max(10, rect.right - dropdownWidth);
       }
+
       setDropdownPos({
-        top: Math.min(window.innerHeight - 200, rect.bottom + 6),
+        top: Math.max(10, top),
         left: Math.max(10, left),
       });
     }
@@ -32,12 +40,20 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const dropdownWidth = 220;
+
+        let top = rect.bottom + 6;
         let left = rect.left;
-        if (rect.left + dropdownWidth > window.innerWidth - 20) {
+
+        if (top + 200 > window.innerHeight) {
+          top = Math.max(10, rect.top - 210);
+        }
+
+        if (left + dropdownWidth > window.innerWidth - 10) {
           left = Math.max(10, rect.right - dropdownWidth);
         }
+
         setDropdownPos({
-          top: Math.min(window.innerHeight - 200, rect.bottom + 6),
+          top: Math.max(10, top),
           left: Math.max(10, left),
         });
       }
