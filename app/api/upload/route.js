@@ -23,8 +23,21 @@ export async function POST(request) {
 
     const db = getDatabase();
     const profileRow = db
-      .prepare('SELECT id FROM profiles WHERE user_id = ? OR id = ?')
+      .prepare('SELECT id, restrictions FROM profiles WHERE user_id = ? OR id = ?')
       .get(user.id, user.id);
+
+    if (profileRow) {
+      let restrictions = [];
+      try {
+        restrictions = JSON.parse(profileRow.restrictions || '[]');
+      } catch {}
+      if (restrictions.includes('disable_avatar')) {
+        return NextResponse.json(
+          { error: 'Вашему аккаунту запрещена смена и загрузка аватарки (Ограничение)' },
+          { status: 403 }
+        );
+      }
+    }
 
     const formData = await request.formData();
     const file = formData.get('avatar') || formData.get('file');

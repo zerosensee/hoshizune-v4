@@ -46,6 +46,8 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('NXCRtop0812');
   const [showPassword, setShowPassword] = useState(false);
+  const [editAllowComments, setEditAllowComments] = useState(true);
+  const [editRestrictions, setEditRestrictions] = useState([]);
   const [profileComments, setProfileComments] = useState([]);
   const [updating, setUpdating] = useState(false);
 
@@ -224,6 +226,8 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
     setEditEmail(profile.userEmail || '');
     setEditPassword('');
     setShowPassword(false);
+    setEditAllowComments(profile.allowComments !== undefined ? profile.allowComments : true);
+    setEditRestrictions(Array.isArray(profile.restrictions) ? profile.restrictions : []);
 
     // Загрузка комментариев и оценок конкретного профиля
     try {
@@ -279,6 +283,8 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
           level: parseInt(editLevel, 10) || 1,
           status: editStatus,
           viewCount: parseInt(editViewCount, 10) || 0,
+          allowComments: editAllowComments,
+          restrictions: editRestrictions,
         }),
       });
 
@@ -299,6 +305,8 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                 titles: editTitles,
                 status: editStatus,
                 effectiveStatus: editStatus,
+                allowComments: editAllowComments,
+                restrictions: editRestrictions,
               }
             : p
         )
@@ -549,12 +557,12 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
         <table>
           <thead>
             <tr>
-              <th>Пользователь / Имя</th>
-              <th>Уровень (LVL)</th>
-              <th>Slug</th>
-              <th>Статус</th>
-              <th>Просмотры</th>
-              <th>Действия</th>
+              <th style={{ whiteSpace: 'nowrap' }}>Пользователь / Имя</th>
+              <th style={{ whiteSpace: 'nowrap' }}>Уровень (LVL)</th>
+              <th style={{ whiteSpace: 'nowrap' }}>Slug</th>
+              <th style={{ whiteSpace: 'nowrap' }}>Статус</th>
+              <th style={{ whiteSpace: 'nowrap' }}>Просмотры</th>
+              <th style={{ whiteSpace: 'nowrap' }}>Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -574,58 +582,66 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                 const st = getStatusBadgeStyle(profile.effectiveStatus || profile.status);
                 return (
                   <tr key={profile.id}>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <div className={styles.tdName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <span>{profile.displayName}</span>
                         <BadgesContainer badges={profile.badges || []} maxVisible={2} size="small" />
                       </div>
                     </td>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <span
                         style={{
                           fontSize: '11px',
                           fontFamily: 'var(--font-mono, monospace)',
                           fontWeight: 'bold',
-                          padding: '2px 7px',
+                          padding: '3px 8px',
                           borderRadius: '4px',
                           color: badge.color,
                           background: badge.background,
                           border: badge.border,
                           boxShadow: badge.glow,
+                          whiteSpace: 'nowrap',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
                         }}
                       >
                         LVL {badge.level} ({badge.title})
                       </span>
                     </td>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <Link
                         href={`/bio/${profile.slug}`}
                         target="_blank"
                         className={styles.tdSlug}
-                        style={{ textDecoration: 'none' }}
+                        style={{ textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                       >
                         @{profile.slug} ↗
                       </Link>
                     </td>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <span
                         style={{
                           fontSize: '11px',
                           fontFamily: 'var(--font-mono, monospace)',
                           fontWeight: 'bold',
-                          padding: '2px 8px',
+                          padding: '3px 8px',
                           borderRadius: '4px',
                           color: st.color,
                           background: st.background,
                           border: st.border,
                           boxShadow: st.glow,
+                          whiteSpace: 'nowrap',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
                         }}
                       >
                         ● {st.label}
                       </span>
                     </td>
-                    <td className={styles.tdMuted}>{profile.viewCount} просм.</td>
-                    <td>
+                    <td className={styles.tdMuted} style={{ whiteSpace: 'nowrap' }}>{profile.viewCount} просм.</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button
                           type="button"
@@ -726,12 +742,16 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                         fontSize: '11px',
                         fontFamily: 'var(--font-mono)',
                         fontWeight: 'bold',
-                        padding: '2px 7px',
+                        padding: '3px 8px',
                         borderRadius: '4px',
                         color: previewBadge.color,
                         background: previewBadge.background,
                         border: previewBadge.border,
                         boxShadow: previewBadge.glow,
+                        whiteSpace: 'nowrap',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
                       }}
                     >
                       LVL {previewBadge.level} ({previewBadge.title})
@@ -906,6 +926,97 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                 onChange={(e) => setEditAccent(e.target.value)}
                 style={{ height: '38px', padding: '2px', cursor: 'pointer' }}
               />
+            </div>
+
+            {/* Блок управления ограничениями и правами (Муты) */}
+            <div
+              style={{
+                margin: '14px 0',
+                padding: '14px 16px',
+                borderRadius: '10px',
+                background: 'rgba(239, 68, 68, 0.05)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  color: '#ef4444',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <span>🛡️ Ограничения возможностей пользователя (Муты и права)</span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                {/* Переключатель работы комментариев на странице профиля */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-primary, #ffffff)' }}>
+                  <input
+                    type="checkbox"
+                    checked={editAllowComments}
+                    onChange={(e) => setEditAllowComments(e.target.checked)}
+                    style={{ accentColor: 'var(--accent, #4ade80)' }}
+                  />
+                  <span>💬 Разрешить комментарии на странице</span>
+                </label>
+
+                {/* Запрет комментариев (Мут) */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: '#fca5a5' }}>
+                  <input
+                    type="checkbox"
+                    checked={editRestrictions.includes('mute_comments')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setEditRestrictions((prev) => [...prev, 'mute_comments']);
+                      } else {
+                        setEditRestrictions((prev) => prev.filter((r) => r !== 'mute_comments'));
+                      }
+                    }}
+                    style={{ accentColor: '#ef4444' }}
+                  />
+                  <span>🔇 Запретить писать отзывы/комментарии (Мут)</span>
+                </label>
+
+                {/* Запрет смены аватарки */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: '#fca5a5' }}>
+                  <input
+                    type="checkbox"
+                    checked={editRestrictions.includes('disable_avatar')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setEditRestrictions((prev) => [...prev, 'disable_avatar']);
+                      } else {
+                        setEditRestrictions((prev) => prev.filter((r) => r !== 'disable_avatar'));
+                      }
+                    }}
+                    style={{ accentColor: '#ef4444' }}
+                  />
+                  <span>🖼️ Запретить загрузку аватара</span>
+                </label>
+
+                {/* Запрет изменения био */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: '#fca5a5' }}>
+                  <input
+                    type="checkbox"
+                    checked={editRestrictions.includes('disable_bio')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setEditRestrictions((prev) => [...prev, 'disable_bio']);
+                      } else {
+                        setEditRestrictions((prev) => prev.filter((r) => r !== 'disable_bio'));
+                      }
+                    }}
+                    style={{ accentColor: '#ef4444' }}
+                  />
+                  <span>✏️ Запретить редактировать Bio и Имя</span>
+                </label>
+              </div>
             </div>
 
             {/* Секция Управления Отзывами и Оценками */}
@@ -1685,10 +1796,34 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
         </div>
       )}
 
-      {/* Тост */}
+      {/* Плашечка уведомлений в правом нижнем углу */}
       {toast && (
-        <div className={toast.isError ? styles.toastError : styles.toast}>
-          {toast.msg}
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '14px 20px',
+            borderRadius: '10px',
+            background: toast.isError ? 'rgba(239, 68, 68, 0.95)' : 'var(--bg-card, #0d120d)',
+            color: toast.isError ? '#ffffff' : 'var(--accent, #4ade80)',
+            border: toast.isError ? '1px solid #ef4444' : '1px solid var(--accent, #4ade80)',
+            boxShadow: toast.isError
+              ? '0 10px 30px rgba(239, 68, 68, 0.4)'
+              : '0 10px 30px var(--accent-glow, rgba(74, 222, 128, 0.25))',
+            fontFamily: 'var(--font-mono, monospace)',
+            fontSize: '13px',
+            fontWeight: '600',
+            backdropFilter: 'blur(12px)',
+            animation: 'slideUpToast 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        >
+          <span style={{ fontSize: '16px' }}>{toast.isError ? '❌' : '✓'}</span>
+          <span>{toast.msg}</span>
         </div>
       )}
     </div>

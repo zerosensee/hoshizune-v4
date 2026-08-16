@@ -530,10 +530,34 @@ export default function SettingsClient({ settings: initialSettings }) {
         </button>
       </div>
 
-      {/* Тост */}
+      {/* Плашечка уведомлений о сохранении настроек в правом нижнем углу */}
       {toast && (
-        <div className={toast.isError ? styles.toastError : styles.toast}>
-          {toast.msg}
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '14px 20px',
+            borderRadius: '10px',
+            background: toast.isError ? 'rgba(239, 68, 68, 0.95)' : 'var(--bg-card, #0d120d)',
+            color: toast.isError ? '#ffffff' : 'var(--accent, #4ade80)',
+            border: toast.isError ? '1px solid #ef4444' : '1px solid var(--accent, #4ade80)',
+            boxShadow: toast.isError
+              ? '0 10px 30px rgba(239, 68, 68, 0.4)'
+              : '0 10px 30px var(--accent-glow, rgba(74, 222, 128, 0.25))',
+            fontFamily: 'var(--font-mono, monospace)',
+            fontSize: '13px',
+            fontWeight: '600',
+            backdropFilter: 'blur(12px)',
+            animation: 'slideUpToast 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        >
+          <span style={{ fontSize: '16px' }}>{toast.isError ? '❌' : '💾'}</span>
+          <span>{toast.msg}</span>
         </div>
       )}
     </div>

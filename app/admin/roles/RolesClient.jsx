@@ -260,24 +260,34 @@ export default function RolesClient({ initialRoles, availablePermissions, curren
 
   return (
     <div>
-      {/* Тосты */}
+      {/* Плашечка уведомлений в правом нижнем углу */}
       {toast && (
         <div
           style={{
             position: 'fixed',
-            top: 20,
-            right: 20,
-            zIndex: 9999,
-            padding: '10px 16px',
-            borderRadius: '6px',
-            background: toast.isError ? '#f87171' : 'var(--accent, #ffffff)',
-            color: '#000',
-            fontWeight: 'bold',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '14px 20px',
+            borderRadius: '10px',
+            background: toast.isError ? 'rgba(239, 68, 68, 0.95)' : 'var(--bg-card, #0d120d)',
+            color: toast.isError ? '#ffffff' : 'var(--accent, #4ade80)',
+            border: toast.isError ? '1px solid #ef4444' : '1px solid var(--accent, #4ade80)',
+            boxShadow: toast.isError
+              ? '0 10px 30px rgba(239, 68, 68, 0.4)'
+              : '0 10px 30px var(--accent-glow, rgba(74, 222, 128, 0.25))',
+            fontFamily: 'var(--font-mono, monospace)',
             fontSize: '13px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            fontWeight: '600',
+            backdropFilter: 'blur(12px)',
+            animation: 'slideUpToast 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          {toast.msg}
+          <span style={{ fontSize: '16px' }}>{toast.isError ? '❌' : '💾'}</span>
+          <span>{toast.msg}</span>
         </div>
       )}
 

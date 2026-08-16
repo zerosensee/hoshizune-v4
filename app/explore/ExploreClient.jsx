@@ -314,16 +314,19 @@ export default function ExploreClient({
                 justifyContent: 'space-between',
               }}
             >
-              <span>// ВАШ ПРОФИЛЬ</span>
+              <span>// ВАШ ЛИЧНЫЙ ПРОФИЛЬ</span>
               <span
                 style={{
-                  background: 'var(--accent-glow, rgba(255, 255, 255, 0.15))',
-                  padding: '2px 6px',
+                  background: 'var(--accent-glow, rgba(74, 222, 128, 0.15))',
+                  color: 'var(--accent, #4ade80)',
+                  border: '1px solid var(--accent, rgba(74, 222, 128, 0.3))',
+                  padding: '2px 8px',
                   borderRadius: 4,
                   fontSize: 10,
+                  fontWeight: 'bold',
                 }}
               >
-                Владелец
+                {myProfile.isOwner ? '👑 Владелец Сайта' : '👤 Ваш Аккаунт'}
               </span>
             </div>
 

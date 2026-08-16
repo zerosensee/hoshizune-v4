@@ -87,8 +87,11 @@ export default function BioViewClient({
     }
   }
 
+  const [commentError, setCommentError] = useState('');
+
   async function handleComment() {
     if (!commentText.trim()) return;
+    setCommentError('');
 
     try {
       const res = await fetch('/api/comments', {
@@ -101,16 +104,33 @@ export default function BioViewClient({
         }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        const data = await fetch(`/api/bio?slug=${profile.slug}`).then((r) =>
-          r.json()
-        );
-        setComments(data.comments || []);
+        const bioData = await fetch(`/api/bio?slug=${profile.slug}`).then((r) => r.json());
+        setComments(bioData.comments || []);
         setCommentText('');
         setRating(0);
+      } else {
+        setCommentError(data.error || 'Ошибка добавления отзыва');
       }
     } catch (e) {
       console.error('Ошибка отправки комментария:', e);
+      setCommentError('Сбой связи с сервером');
+    }
+  }
+
+  async function handleDeleteComment(commentId) {
+    try {
+      const res = await fetch(`/api/comments?id=${commentId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setComments((prev) => prev.filter((c) => c.id !== commentId));
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Ошибка удаления комментария');
+      }
+    } catch {
+      alert('Сбой удаления комментария');
     }
   }
 
@@ -283,19 +303,37 @@ export default function BioViewClient({
 
               {comments.map((c) => (
                 <div className="comment" key={c.id} style={{ borderColor: theme.border }}>
-                  <div className="comment-header">
-                    <span className="comment-author" style={{ color: theme.textPrimary }}>
-                      {c.authorName}
-                    </span>
-                    <span className="comment-date" style={{ color: theme.textMuted }}>
-                      {new Date(c.createdAt).toLocaleDateString('ru-RU')}
-                    </span>
+                  <div className="comment-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="comment-author" style={{ color: theme.textPrimary, fontWeight: 'bold' }}>
+                        {c.authorName}
+                      </span>
+                      <span className="comment-date" style={{ color: theme.textMuted, fontSize: '11px' }}>
+                        {new Date(c.createdAt).toLocaleDateString('ru-RU')}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteComment(c.id)}
+                      title="Удалить отзыв"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        padding: '2px 4px',
+                        opacity: 0.7,
+                      }}
+                    >
+                      ✕
+                    </button>
                   </div>
-                  <p className="comment-text" style={{ color: theme.textPrimary }}>
+                  <p className="comment-text" style={{ color: theme.textPrimary, marginTop: '4px' }}>
                     {c.text}
                   </p>
                   {c.rating > 0 && (
-                    <div className="comment-rating">
+                    <div className="comment-rating" style={{ marginTop: '4px' }}>
                       {[1, 2, 3, 4, 5].map((s) => (
                         <span
                           key={s}
@@ -310,61 +348,93 @@ export default function BioViewClient({
                 </div>
               ))}
 
-              <div style={{ marginTop: 14 }}>
-                <textarea
-                  className="modal-input"
-                  placeholder="Оставить комментарий и оценку..."
-                  rows={2}
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  style={{
-                    background: theme.bgCard,
-                    borderColor: theme.border,
-                    color: theme.textPrimary,
-                  }}
-                />
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginTop: 12,
-                    width: '100%',
-                  }}
-                >
-                  <div className="comment-rating" style={{ display: 'flex', gap: '4px' }}>
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <span
-                        key={s}
-                        className={`star ${s <= rating ? 'filled' : ''}`}
-                        onClick={() => setRating(s)}
-                        style={{
-                          color: s <= rating ? theme.accent : theme.textMuted,
-                          cursor: 'pointer',
-                          fontSize: '18px',
-                          padding: '2px',
-                        }}
-                      >
-                        ★
-                      </span>
-                    ))}
-                  </div>
-                  <button
-                    className="modal-btn primary"
-                    onClick={handleComment}
+              {profile.allowComments !== false ? (
+                <div style={{ marginTop: 14 }}>
+                  {commentError && (
+                    <div
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: '#ef4444',
+                        fontSize: '12px',
+                        marginBottom: '10px',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      ⚠️ {commentError}
+                    </div>
+                  )}
+                  <textarea
+                    className="modal-input"
+                    placeholder="Оставить комментарий и оценку..."
+                    rows={2}
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
                     style={{
-                      background: theme.accent,
-                      color: theme.id === 'pure_light' ? '#ffffff' : '#000000',
-                      marginLeft: 'auto',
-                      padding: '8px 18px',
-                      fontWeight: 'bold',
-                      borderRadius: '6px',
+                      background: theme.bgCard,
+                      borderColor: theme.border,
+                      color: theme.textPrimary,
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginTop: 12,
+                      width: '100%',
                     }}
                   >
-                    Отправить
-                  </button>
+                    <div className="comment-rating" style={{ display: 'flex', gap: '4px' }}>
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <span
+                          key={s}
+                          className={`star ${s <= rating ? 'filled' : ''}`}
+                          onClick={() => setRating(s)}
+                          style={{
+                            color: s <= rating ? theme.accent : theme.textMuted,
+                            cursor: 'pointer',
+                            fontSize: '18px',
+                            padding: '2px',
+                          }}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      className="modal-btn primary"
+                      onClick={handleComment}
+                      style={{
+                        background: theme.accent,
+                        color: theme.id === 'pure_light' ? '#ffffff' : '#000000',
+                        marginLeft: 'auto',
+                        padding: '8px 18px',
+                        fontWeight: 'bold',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      Отправить
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div
+                  style={{
+                    padding: '16px',
+                    textAlign: 'center',
+                    color: theme.textMuted,
+                    fontSize: '12px',
+                    fontStyle: 'italic',
+                    borderTop: `1px dashed ${theme.border}`,
+                    marginTop: '14px',
+                  }}
+                >
+                  🔒 Комментарии к этому профилю отключены
+                </div>
+              )}
             </div>
           </div>
 
