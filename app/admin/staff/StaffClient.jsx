@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import styles from '../profiles/ProfilesClient.module.css';
+import styles from '../admin.module.css';
 
 export default function StaffClient() {
   const [staffList, setStaffList] = useState([]);
