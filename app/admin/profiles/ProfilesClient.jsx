@@ -13,8 +13,8 @@ import BadgesContainer from '@/components/ui/BadgesContainer';
 import GlassSelect from '@/components/ui/GlassSelect';
 import { parseUserAgent } from '@/lib/telemetry';
 
-export default function ProfilesClient({ initialProfiles, currentUser }) {
-  const [profiles, setProfiles] = useState(initialProfiles);
+export default function ProfilesClient({ initialProfiles = [], currentUser }) {
+  const [profiles, setProfiles] = useState(initialProfiles || []);
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState(null);
   const [allRolesList, setAllRolesList] = useState([]);
@@ -194,12 +194,13 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
 
   /** Фильтрация профилей по строке поиска */
   const filtered = useMemo(() => {
+    if (!profiles || !Array.isArray(profiles)) return [];
     if (!search) return profiles;
     const q = search.toLowerCase();
     return profiles.filter(
       (p) =>
-        p.displayName.toLowerCase().includes(q) ||
-        p.slug.toLowerCase().includes(q),
+        (p.displayName && p.displayName.toLowerCase().includes(q)) ||
+        (p.slug && p.slug.toLowerCase().includes(q)),
     );
   }, [profiles, search]);
 
