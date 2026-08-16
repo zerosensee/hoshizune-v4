@@ -61,6 +61,7 @@ export async function POST(request) {
     if (profileRow) {
       db.prepare('UPDATE profiles SET avatar_path = ? WHERE id = ?').run(avatarUrl, profileRow.id);
     }
+    db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatarUrl, user.id);
 
     return NextResponse.json({
       avatarPath: avatarUrl,

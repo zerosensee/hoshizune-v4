@@ -1508,3 +1508,49 @@ html[data-mirror="true"] [class*="roleCard"] {
   border-color: var(--role-color) !important;
 }
 
+/* ═══════════════════════════════════════════
+   Элегантная мягкая Светлая Тема (Soft Slate & Pearl Light)
+   без эффекта ослепления
+   ═══════════════════════════════════════════ */
+body.theme-pure-light {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+body.theme-pure-light input,
+body.theme-pure-light textarea,
+body.theme-pure-light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-pure-light input::placeholder,
+body.theme-pure-light textarea::placeholder {
+  color: #64748b !important;
+}
+
+body.theme-pure-light table th {
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+
+body.theme-pure-light table td {
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+body.theme-pure-light [class*="tdSlug"] {
+  color: #2563eb !important;
+}
+
+body.theme-pure-light [class*="card"],
+body.theme-pure-light [class*="panel"],
+body.theme-pure-light [class*="formBox"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06) !important;
+}
+

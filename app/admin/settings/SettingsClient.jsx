@@ -28,6 +28,22 @@ export default function SettingsClient({ settings: initialSettings }) {
     setGlassFx(localStorage.getItem('hoshizune_glass_fx') === 'true');
     setLiquidFx(localStorage.getItem('hoshizune_liquid_fx') === 'true');
     setMirrorFx(localStorage.getItem('hoshizune_mirror_fx') === 'true');
+
+    // Автоматическая загрузка актуальных синхронизированных настроек из БД
+    fetch('/api/admin/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.allowedIps && Array.isArray(data.allowedIps)) {
+          setAllowedIps(data.allowedIps);
+        }
+        if (typeof data.allowLocalNetwork === 'boolean') {
+          setAllowLocalNetwork(data.allowLocalNetwork);
+        }
+        if (data.sessionMaxAge) {
+          setSessionMaxAge(data.sessionMaxAge);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const [newIp, setNewIp] = useState('');
@@ -111,7 +127,18 @@ export default function SettingsClient({ settings: initialSettings }) {
 
       const data = await res.json();
       if (res.ok) {
-        showToast(data.message || 'Настройки доступа и IP-вайтлиста успешно сохранены!');
+        showToast(data.message || 'Настройки доступа и IP-вайтлиста успешно сохранены в БД!');
+        if (data.settings) {
+          if (Array.isArray(data.settings.allowedIps)) {
+            setAllowedIps(data.settings.allowedIps);
+          }
+          if (typeof data.settings.allowLocalNetwork === 'boolean') {
+            setAllowLocalNetwork(data.settings.allowLocalNetwork);
+          }
+          if (data.settings.sessionMaxAge) {
+            setSessionMaxAge(data.settings.sessionMaxAge);
+          }
+        }
       } else {
         showToast(data.error || 'Ошибка сохранения настроек', true);
       }

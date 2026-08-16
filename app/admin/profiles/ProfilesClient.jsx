@@ -62,6 +62,20 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
   const [createRole, setCreateRole] = useState('user');
   const [creating, setCreating] = useState(false);
 
+  /* Модальное окно управления банами и сессиями */
+  const [banModalProfile, setBanModalProfile] = useState(null);
+  const [banIpInput, setBanIpInput] = useState('');
+  const [banReasonInput, setBanReasonInput] = useState('Нарушение правил сообщества');
+  const [banDurationDays, setBanDurationDays] = useState(1);
+  const [isBanning, setIsBanning] = useState(false);
+
+  const openBanModal = (profile) => {
+    setBanModalProfile(profile);
+    setBanIpInput('');
+    setBanReasonInput('Нарушение правил сообщества');
+    setBanDurationDays(1);
+  };
+
   /** Отображение тост-уведомления */
   const showToast = useCallback((msg, isError = false) => {
     setToast({ msg, isError });
@@ -113,6 +127,62 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
       showToast('Сбой подключения при создании учётки', true);
     } finally {
       setCreating(false);
+    }
+  };
+
+  /** Применение блокировки (аккаунта или IP) */
+  const handleBanAction = async (isIpBan = false) => {
+    if (!banModalProfile) return;
+    setIsBanning(true);
+    try {
+      const endpoint = isIpBan ? '/api/admin/users/bans' : '/api/admin/users/bans';
+      const body = isIpBan
+        ? { ip: banIpInput.trim(), reason: banReasonInput, action: 'ban_ip' }
+        : {
+            userId: banModalProfile.userId || banModalProfile.id,
+            reason: banReasonInput,
+            durationDays: banDurationDays,
+            action: 'ban_user',
+          };
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Ошибка при применении блокировки', true);
+        return;
+      }
+
+      showToast(isIpBan ? `IP ${banIpInput} заблокирован!` : `Пользователь ${banModalProfile.displayName} заблокирован на ${banDurationDays} дн.!`);
+      setBanModalProfile(null);
+    } catch {
+      showToast('Ошибка при отправке команды блокировки', true);
+    } finally {
+      setIsBanning(false);
+    }
+  };
+
+  /** Принудительное завершение всех сессий пользователя */
+  const handleRevokeSessions = async () => {
+    if (!banModalProfile) return;
+    try {
+      const res = await fetch('/api/admin/users/sessions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: banModalProfile.userId || banModalProfile.id }),
+      });
+      if (res.ok) {
+        showToast(`Все активные сессии ${banModalProfile.displayName} сброшены!`);
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Не удалось завершить сессии', true);
+      }
+    } catch {
+      showToast('Ошибка сброса сессий', true);
     }
   };
 
@@ -395,6 +465,44 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
     }
   };
 
+  const getStatusBadgeStyle = (status) => {
+    const s = (status || 'offline').toLowerCase();
+    switch (s) {
+      case 'online':
+        return {
+          label: 'в сети',
+          color: '#22c55e',
+          background: 'rgba(34, 197, 94, 0.15)',
+          border: '1px solid rgba(34, 197, 94, 0.4)',
+          glow: '0 0 8px rgba(34, 197, 94, 0.25)',
+        };
+      case 'dnd':
+        return {
+          label: 'dnd (не беспокоить)',
+          color: '#ef4444',
+          background: 'rgba(239, 68, 68, 0.15)',
+          border: '1px solid rgba(239, 68, 68, 0.4)',
+          glow: '0 0 8px rgba(239, 68, 68, 0.25)',
+        };
+      case 'idle':
+        return {
+          label: 'idle (неактивен)',
+          color: '#f59e0b',
+          background: 'rgba(245, 158, 11, 0.15)',
+          border: '1px solid rgba(245, 158, 11, 0.4)',
+          glow: '0 0 8px rgba(245, 158, 11, 0.25)',
+        };
+      default:
+        return {
+          label: 'offline',
+          color: '#9ca3af',
+          background: 'rgba(156, 163, 175, 0.12)',
+          border: '1px solid rgba(156, 163, 175, 0.3)',
+          glow: 'none',
+        };
+    }
+  };
+
   const previewBadge = getLevelBadge(editLevel);
 
   return (
@@ -463,6 +571,7 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
               filtered.map((profile) => {
                 const badge = getLevelBadge(profile.level || 1);
                 const roleBadge = getRoleBadge(profile.role || (profile.isOwner ? 'owner' : 'user'));
+                const st = getStatusBadgeStyle(profile.effectiveStatus || profile.status);
                 return (
                   <tr key={profile.id}>
                     <td>
@@ -500,13 +609,19 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                     </td>
                     <td>
                       <span
-                        className={
-                          profile.effectiveStatus === 'online'
-                            ? styles.badgeActive
-                            : styles.badgeInactive
-                        }
+                        style={{
+                          fontSize: '11px',
+                          fontFamily: 'var(--font-mono, monospace)',
+                          fontWeight: 'bold',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          color: st.color,
+                          background: st.background,
+                          border: st.border,
+                          boxShadow: st.glow,
+                        }}
                       >
-                        {profile.effectiveStatus || 'offline'}
+                        ● {st.label}
                       </span>
                     </td>
                     <td className={styles.tdMuted}>{profile.viewCount} просм.</td>
@@ -519,6 +634,14 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                           style={{ color: '#facc15', borderColor: 'rgba(250, 204, 21, 0.3)' }}
                         >
                           ✎ Управлять
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.actionBtn}
+                          onClick={() => openBanModal(profile)}
+                          style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.1)' }}
+                        >
+                          🔨 Баны/Сессии
                         </button>
                         <button
                           type="button"
@@ -552,6 +675,86 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
           >
             <div className={styles.formTitle}>
               Управление учёткой и профилем @{editingProfile.slug}
+            </div>
+
+            {/* Предпросмотр карточки профиля в реальном времени */}
+            <div
+              style={{
+                marginBottom: '20px',
+                padding: '16px',
+                borderRadius: '12px',
+                background: 'var(--bg-card, #0a0d0a)',
+                border: `1px solid ${editAccent || '#4ade80'}`,
+                boxShadow: `0 0 20px ${editAccent ? editAccent + '33' : 'rgba(74, 222, 128, 0.2)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+              }}
+            >
+              <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted, #737373)', fontWeight: 'bold' }}>
+                👁 Предпросмотр карточки профиля (Live Preview)
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div
+                  style={{
+                    width: '54px',
+                    height: '54px',
+                    borderRadius: '12px',
+                    background: editAccent || '#4ade80',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '22px',
+                    fontWeight: 'bold',
+                    color: '#000',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {editingProfile?.avatarPath ? (
+                    <img src={editingProfile.avatarPath} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    (editName || 'U')[0].toUpperCase()
+                  )}
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff' }}>{editName || 'Имя профиля'}</span>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 'bold',
+                        padding: '2px 7px',
+                        borderRadius: '4px',
+                        color: previewBadge.color,
+                        background: previewBadge.background,
+                        border: previewBadge.border,
+                        boxShadow: previewBadge.glow,
+                      }}
+                    >
+                      LVL {previewBadge.level} ({previewBadge.title})
+                    </span>
+                  </div>
+
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted, #a3a3a3)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>@{editSlug || 'slug'}</span>
+                    <span>•</span>
+                    <span style={{ color: getStatusBadgeStyle(editStatus).color }}>
+                      ● {getStatusBadgeStyle(editStatus).label}
+                    </span>
+                    <span>•</span>
+                    <span>👁 {editViewCount || 0} просм.</span>
+                  </div>
+                </div>
+              </div>
+
+              {editBio && (
+                <div style={{ fontSize: '12px', color: '#e5e5e5', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '6px', fontStyle: 'italic' }}>
+                  "{editBio}"
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
@@ -1314,6 +1517,171 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Модальное окно управления банами и сессиями */}
+      {banModalProfile && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '480px',
+              width: '100%',
+              background: 'var(--bg-card, #0d1210)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              borderRadius: '12px',
+              padding: '24px',
+              boxShadow: '0 20px 50px rgba(239, 68, 68, 0.2)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '16px',
+                paddingBottom: '10px',
+                borderBottom: '1px solid rgba(239, 68, 68, 0.2)',
+              }}
+            >
+              <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🔨 Управление Банами и Сессиями: {banModalProfile.displayName}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBanModalProfile(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#9ca3af',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                ID Пользователя: <span style={{ color: '#fff', fontFamily: 'monospace' }}>{banModalProfile.userId || banModalProfile.id}</span>
+              </div>
+
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>Причина блокировки</label>
+                <input
+                  type="text"
+                  className={styles.formInput}
+                  value={banReasonInput}
+                  onChange={(e) => setBanReasonInput(e.target.value)}
+                  placeholder="Причина..."
+                />
+              </div>
+
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>Срок блокировки (в днях)</label>
+                <select
+                  className={styles.formInput}
+                  value={banDurationDays}
+                  onChange={(e) => setBanDurationDays(Number(e.target.value))}
+                >
+                  <option value={1}>1 день</option>
+                  <option value={3}>3 дня</option>
+                  <option value={7}>7 дней</option>
+                  <option value={30}>30 дней</option>
+                  <option value={3650}>Перманентно (Навсегда)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleBanAction(false)}
+                  disabled={isBanning || banModalProfile.isOwner}
+                  style={{
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid #ef4444',
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    color: '#ef4444',
+                    fontWeight: 'bold',
+                    cursor: banModalProfile.isOwner ? 'not-allowed' : 'pointer',
+                    opacity: banModalProfile.isOwner ? 0.5 : 1,
+                  }}
+                >
+                  🚫 Заблокировать Аккаунт
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleRevokeSessions()}
+                  style={{
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid #f59e0b',
+                    background: 'rgba(245, 158, 11, 0.2)',
+                    color: '#f59e0b',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ⚡ Сбросить все Сессии
+                </button>
+              </div>
+
+              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <label className={styles.formLabel}>Заблокировать по IP-адресу</label>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <input
+                    type="text"
+                    className={styles.formInput}
+                    placeholder="Например 192.168.1.1..."
+                    value={banIpInput}
+                    onChange={(e) => setBanIpInput(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleBanAction(true)}
+                    disabled={!banIpInput.trim()}
+                    style={{
+                      padding: '0 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #dc2626',
+                      background: '#dc2626',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      cursor: banIpInput.trim() ? 'pointer' : 'not-allowed',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Бан IP
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '20px', textAlign: 'right' }}>
+              <button
+                type="button"
+                className={styles.cancelBtn}
+                onClick={() => setBanModalProfile(null)}
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -1,7 +1,7 @@
 /**
  * Страница настроек панели администратора (серверная).
  */
-import adminConfig from '@/admin-config.json';
+import { getDbSettings } from '@/lib/database';
 import AdminLayoutClient from '../AdminLayoutClient';
 import SettingsClient from './SettingsClient';
 
@@ -10,12 +10,7 @@ export const metadata = {
 };
 
 export default function AdminSettingsPage() {
-  const settings = {
-    allowedIps: adminConfig.allowedIps,
-    allowLocalNetwork: adminConfig.allowLocalNetwork,
-    adminSubdomain: adminConfig.adminSubdomain,
-    sessionMaxAge: adminConfig.sessionMaxAge,
-  };
+  const settings = getDbSettings();
 
   return (
     <AdminLayoutClient>
