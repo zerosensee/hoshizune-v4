@@ -71,7 +71,9 @@ export default function SubscriptionClient({ currentUser, initialSubscription })
         }}
       >
         <div style={{ fontSize: '12px', color: '#a3a3a3' }}>
-          {currentUser ? `Вы вошли как: ${currentUser.email}` : 'Гость'}
+          {currentUser
+            ? `Вы вошли как: ${currentUser.primaryEmail || currentUser.email || currentUser.displayName || currentUser.id}`
+            : 'Гость'}
         </div>
       </div>
 
