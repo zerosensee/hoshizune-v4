@@ -18,10 +18,34 @@ export const metadata = {
 };
 
 export default function AdminDashboardPage() {
-  const profiles = getAllProfiles();
-  const linksCount = getShortLinksCount();
-  const globalStats = getGlobalStats(7);
-  const rawViewsByDay = getGlobalViewsByDay(7);
+  let profiles = [];
+  let linksCount = 0;
+  let globalStats = { totalViews: 0, uniqueVisitors: 0, topProfiles: [] };
+  let rawViewsByDay = [];
+
+  try {
+    profiles = getAllProfiles() || [];
+  } catch (err) {
+    console.error('[AdminDashboardPage] Ошибка загрузки профилей:', err);
+  }
+
+  try {
+    linksCount = getShortLinksCount() || 0;
+  } catch (err) {
+    console.error('[AdminDashboardPage] Ошибка загрузки ссылок:', err);
+  }
+
+  try {
+    globalStats = getGlobalStats(7) || { totalViews: 0, uniqueVisitors: 0, topProfiles: [] };
+  } catch (err) {
+    console.error('[AdminDashboardPage] Ошибка загрузки аналитики:', err);
+  }
+
+  try {
+    rawViewsByDay = getGlobalViewsByDay(7) || [];
+  } catch (err) {
+    console.error('[AdminDashboardPage] Ошибка загрузки графиков:', err);
+  }
 
   // Формируем структурированный массив за последние 7 дней (даже при отсутствии логов)
   const viewsByDay = [];
@@ -33,9 +57,9 @@ export default function AdminDashboardPage() {
     const dateStr = d.toISOString().split('T')[0];
     const dayLabel = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 
-    const found = rawViewsByDay.find((v) => v.day === dateStr);
-    const views = found ? found.views : 0;
-    const uniques = found ? Math.max(1, Math.floor(views * 0.75)) : 0;
+    const found = Array.isArray(rawViewsByDay) ? rawViewsByDay.find((v) => v && v.day === dateStr) : null;
+    const views = found ? (found.views || 0) : 0;
+    const uniques = found ? Math.max(0, Math.floor(views * 0.75)) : 0;
 
     viewsByDay.push({
       isoDay: dateStr,
@@ -46,11 +70,11 @@ export default function AdminDashboardPage() {
   }
 
   const initialData = {
-    profilesCount: profiles.length,
-    linksCount,
-    totalViews: globalStats.totalViews,
-    uniqueVisitors: globalStats.uniqueVisitors,
-    topProfiles: globalStats.topProfiles,
+    profilesCount: Array.isArray(profiles) ? profiles.length : 0,
+    linksCount: linksCount || 0,
+    totalViews: globalStats?.totalViews || 0,
+    uniqueVisitors: globalStats?.uniqueVisitors || 0,
+    topProfiles: Array.isArray(globalStats?.topProfiles) ? globalStats.topProfiles : [],
     viewsByDay,
   };
 

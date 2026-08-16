@@ -407,15 +407,15 @@ function CurvedDonutChart({ items }) {
  * Дашборд администратора с общей статистикой.
  * @param {{ data: object }} props
  */
-export default function AdminDashboardClient({ data }) {
+export default function AdminDashboardClient({ data = {} }) {
   const {
-    profilesCount,
-    linksCount,
-    totalViews,
-    uniqueVisitors,
-    topProfiles,
-    viewsByDay,
-  } = data;
+    profilesCount = 0,
+    linksCount = 0,
+    totalViews = 0,
+    uniqueVisitors = 0,
+    topProfiles = [],
+    viewsByDay = [],
+  } = data || {};
 
   const donutItems = [
     { label: 'Профили', value: profilesCount, color: 'var(--accent, #ffffff)' },
