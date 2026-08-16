@@ -11,6 +11,7 @@ import TerminalCard from '@/components/ui/TerminalCard';
 import ProfileRow from '@/components/ui/ProfileRow';
 import BioBlock from '@/components/ui/BioBlock';
 import LinkButton from '@/components/ui/LinkButton';
+import CreatorBadge from '@/components/ui/CreatorBadge';
 import MusicWidget from '@/components/ui/MusicWidget';
 import { useHeartbeat } from '@/hooks/useHeartbeat';
 import { getThemePreset } from '@/lib/theme-presets';
@@ -438,54 +439,54 @@ export default function BioViewClient({
             </div>
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: 20 }}>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              style={{
+                background: theme.bgCard,
+                border: `1px solid ${theme.border}`,
+                color: theme.textPrimary,
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                fontFamily: 'var(--font-mono)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              ← Назад
+            </button>
             <Link
               href="/"
               style={{
+                background: 'var(--accent-glow, rgba(74, 222, 128, 0.12))',
+                border: `1px solid ${theme.accent}`,
                 color: theme.accent,
-                fontSize: 12,
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 'bold',
                 fontFamily: 'var(--font-mono)',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease',
               }}
             >
-              ← На главную
+              🏠 На главную
             </Link>
           </div>
         </div>
       </main>
 
       {/* Уголок Создателя Сайта (Король) */}
-      <Link
-        href="/bio/hoshizune"
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          left: '24px',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '8px 14px',
-          borderRadius: '12px',
-          background: 'rgba(15, 12, 5, 0.85)',
-          border: '1px solid rgba(245, 158, 11, 0.6)',
-          boxShadow: '0 8px 24px rgba(245, 158, 11, 0.25)',
-          backdropFilter: 'blur(12px)',
-          textDecoration: 'none',
-          color: '#fbbf24',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          fontFamily: 'var(--font-mono, monospace)',
-          transition: 'transform 0.2s ease, boxShadow 0.2s ease',
-        }}
-      >
-        <span style={{ fontSize: '16px' }}>👑</span>
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-          <span style={{ fontSize: '9px', textTransform: 'uppercase', color: '#f59e0b', letterSpacing: '0.5px', fontWeight: '800' }}>
-            Создатель сайта
-          </span>
-          <span style={{ color: '#ffffff', fontWeight: 'bold' }}>@hoshizune ↗</span>
-        </div>
-      </Link>
+      <CreatorBadge />
     </>
   );
 }

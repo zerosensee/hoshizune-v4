@@ -30,6 +30,16 @@ const NAV_ITEMS = [
     icon: '👑',
   },
   {
+    href: '/admin/subscriptions',
+    label: 'Подписки',
+    icon: '💎',
+  },
+  {
+    href: '/admin/staff',
+    label: 'Состав',
+    icon: '🛡️',
+  },
+  {
     href: '/admin/links',
     label: 'Ссылки',
     icon: '◎',
@@ -56,6 +66,7 @@ export default function AdminLayoutClient({ children }) {
   const [glassFx, setGlassFx] = useState(false);
   const [liquidFx, setLiquidFx] = useState(false);
   const [mirrorFx, setMirrorFx] = useState(false);
+  const [animationsFx, setAnimationsFx] = useState(true);
 
   useEffect(() => {
     const saved = localStorage.getItem('hoshizune_user_theme') || 'total_black';
@@ -65,10 +76,18 @@ export default function AdminLayoutClient({ children }) {
     const g = localStorage.getItem('hoshizune_glass_fx') === 'true';
     const l = localStorage.getItem('hoshizune_liquid_fx') === 'true';
     const m = localStorage.getItem('hoshizune_mirror_fx') === 'true';
+    const anim = localStorage.getItem('hoshizune_animations_fx') !== 'false';
     setGlassFx(g);
     setLiquidFx(l);
     setMirrorFx(m);
+    setAnimationsFx(anim);
     applyVisualFx(g, l, m);
+
+    if (!anim) {
+      document.body.classList.add('no-animations');
+    } else {
+      document.body.classList.remove('no-animations');
+    }
 
     const handleThemeChange = (e) => {
       const t = e.detail?.theme || localStorage.getItem('hoshizune_user_theme') || 'total_black';
@@ -121,6 +140,16 @@ export default function AdminLayoutClient({ children }) {
     localStorage.setItem('hoshizune_mirror_fx', val ? 'true' : 'false');
     applyVisualFx(glassFx, liquidFx, val);
     window.dispatchEvent(new CustomEvent('hoshizune-fx-change'));
+  };
+
+  const handleToggleAnimationsFx = (val) => {
+    setAnimationsFx(val);
+    localStorage.setItem('hoshizune_animations_fx', val ? 'true' : 'false');
+    if (!val) {
+      document.body.classList.add('no-animations');
+    } else {
+      document.body.classList.remove('no-animations');
+    }
   };
 
   const handleLogout = useCallback(async (e) => {
@@ -372,6 +401,25 @@ export default function AdminLayoutClient({ children }) {
                   }}
                 >
                   {mirrorFx ? '☑' : '☐'} Зеркало
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleToggleAnimationsFx(!animationsFx)}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    border: `1px solid ${animationsFx ? 'var(--accent)' : 'var(--border-card)'}`,
+                    background: animationsFx ? 'var(--accent-glow, rgba(74,222,128,0.15))' : 'transparent',
+                    color: animationsFx ? 'var(--accent)' : 'var(--text-muted)',
+                    fontSize: 11,
+                    fontFamily: 'var(--font-mono)',
+                    cursor: 'pointer',
+                    gridColumn: 'span 3',
+                    marginTop: '4px',
+                  }}
+                >
+                  {animationsFx ? '⚡ Анимации кнопок и профилей ВКЛ' : '🚫 Анимации ВЫКЛ (Статический режим)'}
                 </button>
               </div>
             </div>

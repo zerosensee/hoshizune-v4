@@ -787,6 +787,49 @@ textarea.modal-input {
 /* ═══════════════════════════════════════════
    Медиа-запросы
    ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   Микро-анимации кнопок и профилей (с подстройкой отключения)
+   ═══════════════════════════════════════════ */
+body:not(.no-animations) button,
+body:not(.no-animations) .btn,
+body:not(.no-animations) a.btn {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+body:not(.no-animations) button:hover,
+body:not(.no-animations) .btn:hover,
+body:not(.no-animations) a.btn:hover {
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: 0 6px 20px var(--accent-glow, rgba(74, 222, 128, 0.2));
+}
+
+body:not(.no-animations) button:active,
+body:not(.no-animations) .btn:active,
+body:not(.no-animations) a.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+body:not(.no-animations) .card,
+body:not(.no-animations) .profile-row,
+body:not(.no-animations) [class*="profileCard"] {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+body:not(.no-animations) .card:hover,
+body:not(.no-animations) [class*="profileCard"]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px var(--accent-glow, rgba(0, 0, 0, 0.6));
+}
+
+/* При отключении анимаций в настройках */
+body.no-animations *,
+body.no-animations *::before,
+body.no-animations *::after {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

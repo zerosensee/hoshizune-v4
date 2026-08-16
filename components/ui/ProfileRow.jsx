@@ -89,7 +89,7 @@ export default function ProfileRow({
         )}
       </div>
       <div className="profile-info">
-        <div className="name" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+        <div className="name" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', rowGap: '4px' }}>
           <span style={{ flexShrink: 0 }}>{displayName}</span>
 
           {/* Бейдж уровня */}

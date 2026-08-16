@@ -12,7 +12,7 @@ import ProfileRow from '@/components/ui/ProfileRow';
 import BioBlock from '@/components/ui/BioBlock';
 import LinkButton from '@/components/ui/LinkButton';
 import ShortenWidget from '@/components/ui/ShortenWidget';
-import { useHeartbeat } from '@/hooks/useHeartbeat';
+import CreatorBadge from '@/components/ui/CreatorBadge';
 
 export default function HomeClient({ owner, currentUser, myProfile }) {
   const router = useRouter();
@@ -273,38 +273,7 @@ export default function HomeClient({ owner, currentUser, myProfile }) {
       </main>
 
       {/* Уголок Создателя Сайта (Король) */}
-      <Link
-        href="/bio/hoshizune"
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          left: '24px',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '8px 14px',
-          borderRadius: '12px',
-          background: 'rgba(15, 12, 5, 0.85)',
-          border: '1px solid rgba(245, 158, 11, 0.6)',
-          boxShadow: '0 8px 24px rgba(245, 158, 11, 0.25)',
-          backdropFilter: 'blur(12px)',
-          textDecoration: 'none',
-          color: '#fbbf24',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          fontFamily: 'var(--font-mono, monospace)',
-          transition: 'transform 0.2s ease, boxShadow 0.2s ease',
-        }}
-      >
-        <span style={{ fontSize: '16px' }}>👑</span>
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-          <span style={{ fontSize: '9px', textTransform: 'uppercase', color: '#f59e0b', letterSpacing: '0.5px', fontWeight: '800' }}>
-            Создатель сайта
-          </span>
-          <span style={{ color: '#ffffff', fontWeight: 'bold' }}>@hoshizune ↗</span>
-        </div>
-      </Link>
+      <CreatorBadge />
     </>
   );
 }

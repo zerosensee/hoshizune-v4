@@ -7,7 +7,9 @@ import { NextResponse } from 'next/server';
 import {
   isAdminAuthorized,
   unauthorizedResponse,
+  canActorModifyTarget,
 } from '@/lib/admin-auth';
+import { getCurrentUser } from '@/lib/user-auth';
 import {
   getProfileById,
   updateProfile,
@@ -16,7 +18,7 @@ import {
 
 /**
  * PUT /api/admin/profiles/[id]
- * Обновляет любой профиль (включая владельца).
+ * Обновляет профиль с проверкой системной иерархии ролей.
  */
 export async function PUT(request, context) {
   if (!(await isAdminAuthorized())) {
@@ -34,6 +36,14 @@ export async function PUT(request, context) {
       );
     }
 
+    const actor = await getCurrentUser();
+    if (actor && !canActorModifyTarget(actor, profile)) {
+      return NextResponse.json(
+        { error: 'У вас недостаточно полномочий для изменения вышестоящего сотрудника в иерархии' },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
     const updated = updateProfile(id, body);
     return NextResponse.json({ profile: updated });
@@ -47,7 +57,7 @@ export async function PUT(request, context) {
 
 /**
  * DELETE /api/admin/profiles/[id]
- * Удаляет профиль по ID (кроме владельца).
+ * Удаляет профиль по ID с проверкой системной иерархии.
  */
 export async function DELETE(request, context) {
   if (!(await isAdminAuthorized())) {
@@ -61,6 +71,14 @@ export async function DELETE(request, context) {
     return NextResponse.json(
       { error: 'Профиль не найден' },
       { status: 404 },
+    );
+  }
+
+  const actor = await getCurrentUser();
+  if (actor && !canActorModifyTarget(actor, profile)) {
+    return NextResponse.json(
+      { error: 'Нельзя удалить аккаунт равного или вышестоящего сотрудника' },
+      { status: 403 },
     );
   }
 

@@ -1737,6 +1737,23 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
 
                 <button
                   type="button"
+                  onClick={() => handleUnbanUser(banModalProfile)}
+                  disabled={isBanning}
+                  style={{
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid #22c55e',
+                    background: 'rgba(34, 197, 94, 0.2)',
+                    color: '#4ade80',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  }}
+                >
+                  🟢 Снять все Баны (Разбанить)
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => handleRevokeSessions()}
                   style={{
                     padding: '10px',
@@ -1746,6 +1763,7 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                     color: '#f59e0b',
                     fontWeight: 'bold',
                     cursor: 'pointer',
+                    gridColumn: 'span 2',
                   }}
                 >
                   ⚡ Сбросить все Сессии
