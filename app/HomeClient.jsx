@@ -13,6 +13,7 @@ import BioBlock from '@/components/ui/BioBlock';
 import LinkButton from '@/components/ui/LinkButton';
 import ShortenWidget from '@/components/ui/ShortenWidget';
 import CreatorBadge from '@/components/ui/CreatorBadge';
+import { useHeartbeat } from '@/hooks/useHeartbeat';
 
 export default function HomeClient({ owner, currentUser, myProfile }) {
   const router = useRouter();
