@@ -620,13 +620,26 @@ function BioEditorInner() {
               </div>
 
               {/* Кнопки действий */}
-              <div className="modal-actions" style={{ marginTop: 24 }}>
+              <div className="modal-actions" style={{ marginTop: 24, display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="modal-btn"
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.history.length > 1) {
+                      router.back();
+                    } else {
+                      router.push('/');
+                    }
+                  }}
+                >
+                  ← Назад
+                </button>
                 <button
                   type="button"
                   className="modal-btn"
                   onClick={() => router.push('/')}
                 >
-                  Отмена
+                  🏠 На главную
                 </button>
                 <button
                   type="submit"

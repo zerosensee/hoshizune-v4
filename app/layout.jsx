@@ -1,6 +1,7 @@
 import './globals.css';
 import MoscowClock from '@/components/ui/MoscowClock';
 import ThemeProvider from '@/components/ThemeProvider';
+import GlobalNavigationWidget from '@/components/ui/GlobalNavigationWidget';
 
 export const metadata = {
   title: 'Hoshizune — Bio',
@@ -63,6 +64,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <div className="noise" />
+        <GlobalNavigationWidget />
         <ThemeProvider>{children}</ThemeProvider>
         <MoscowClock />
       </body>

@@ -5,8 +5,20 @@ import { useState, useRef, useEffect } from 'react';
 export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'normal' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [alignLeft, setAlignLeft] = useState(false);
   const scrollRef = useRef(null);
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.left < 220) {
+        setAlignLeft(true);
+      } else {
+        setAlignLeft(false);
+      }
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isPinned) return;
@@ -163,7 +175,7 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
               style={{
                 position: 'absolute',
                 top: 'calc(100% + 6px)',
-                right: 0,
+                ...(alignLeft ? { left: 0 } : { right: 0 }),
                 zIndex: 999999,
                 background: 'var(--bg-card, rgba(13, 18, 16, 0.96))',
                 border: '1px solid var(--border-card, rgba(255, 255, 255, 0.25))',

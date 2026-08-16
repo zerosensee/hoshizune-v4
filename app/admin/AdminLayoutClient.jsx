@@ -231,26 +231,59 @@ export default function AdminLayoutClient({ children }) {
         </nav>
 
         <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border-card, #141914)', marginTop: 'auto' }}>
-          <Link
-            href="/"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              border: '1px solid var(--accent, rgba(74, 222, 128, 0.25))',
-              background: 'var(--accent-glow, rgba(74, 222, 128, 0.06))',
-              color: 'var(--accent, #4ade80)',
-              fontSize: '12px',
-              textDecoration: 'none',
-              fontFamily: "'JetBrains Mono', monospace",
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <span>←</span>
-            <span>На главный сайт</span>
-          </Link>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.href = '/';
+                }
+              }}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '8px 10px',
+                borderRadius: '6px',
+                border: '1px solid var(--border-card, rgba(255, 255, 255, 0.2))',
+                background: 'var(--bg-block, rgba(255, 255, 255, 0.04))',
+                color: 'var(--text-primary, #ffffff)',
+                fontSize: '12px',
+                cursor: 'pointer',
+                fontFamily: "'JetBrains Mono', monospace",
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>←</span>
+              <span>Назад</span>
+            </button>
+            <Link
+              href="/"
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '8px 10px',
+                borderRadius: '6px',
+                border: '1px solid var(--accent, rgba(74, 222, 128, 0.25))',
+                background: 'var(--accent-glow, rgba(74, 222, 128, 0.06))',
+                color: 'var(--accent, #4ade80)',
+                fontSize: '12px',
+                textDecoration: 'none',
+                fontFamily: "'JetBrains Mono', monospace",
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>🏠</span>
+              <span>Сайт</span>
+            </Link>
+          </div>
         </div>
 
         <button
