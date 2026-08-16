@@ -1,0 +1,11 @@
+{
+  "allowedIps": [
+    "*"
+  ],
+  "allowLocalNetwork": true,
+  "adminPassword": "NXCRtop0812",
+  "adminSubdomain": "admin.hoshizune.space",
+  "sessionSecret": "hoshi_secret_session_key_v4_2024",
+  "sessionCookieName": "hoshizune_admin_session",
+  "sessionMaxAge": 2592000
+}
