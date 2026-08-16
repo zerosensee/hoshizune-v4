@@ -9,15 +9,45 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
   const scrollRef = useRef(null);
   const containerRef = useRef(null);
 
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+
   useEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      if (rect.left < 380) {
-        setAlignLeft(true);
-      } else {
-        setAlignLeft(false);
+      const dropdownWidth = 220;
+      let left = rect.left;
+      if (rect.left + dropdownWidth > window.innerWidth - 20) {
+        left = Math.max(10, rect.right - dropdownWidth);
       }
+      setDropdownPos({
+        top: Math.min(window.innerHeight - 200, rect.bottom + 6),
+        left: Math.max(10, left),
+      });
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScrollOrResize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const dropdownWidth = 220;
+        let left = rect.left;
+        if (rect.left + dropdownWidth > window.innerWidth - 20) {
+          left = Math.max(10, rect.right - dropdownWidth);
+        }
+        setDropdownPos({
+          top: Math.min(window.innerHeight - 200, rect.bottom + 6),
+          left: Math.max(10, left),
+        });
+      }
+    };
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -173,11 +203,11 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
                 e.stopPropagation();
               }}
               style={{
-                position: 'absolute',
-                top: 'calc(100% + 6px)',
-                ...(alignLeft ? { left: 0 } : { right: 0 }),
-                zIndex: 999999,
-                background: 'var(--bg-card, rgba(13, 18, 16, 0.96))',
+                position: 'fixed',
+                top: `${dropdownPos.top}px`,
+                left: `${dropdownPos.left}px`,
+                zIndex: 9999999,
+                background: 'var(--bg-card, rgba(13, 18, 16, 0.98))',
                 border: '1px solid var(--border-card, rgba(255, 255, 255, 0.25))',
                 borderRadius: '8px',
                 padding: '10px 12px',
@@ -185,7 +215,7 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '6px',
-                minWidth: '180px',
+                minWidth: '200px',
                 maxWidth: '280px',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',

@@ -7,6 +7,7 @@ export default function SubscriptionsClient() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterTab, setFilterTab] = useState('all'); // 'all' | 'active' | 'none'
   const [showIssueModal, setShowIssueModal] = useState(false);
 
   // Стейт формы выдачи подписки
@@ -47,6 +48,12 @@ export default function SubscriptionsClient() {
   useEffect(() => {
     loadSubscriptions();
   }, []);
+
+  const openIssueForUser = (user) => {
+    setIssueUserId(user.userSlug || user.userId);
+    setIssueEmail(user.email && user.email !== '—' ? user.email : '');
+    setShowIssueModal(true);
+  };
 
   // Выдача подписки
   const handleIssue = async (e) => {
@@ -125,15 +132,22 @@ export default function SubscriptionsClient() {
     }
   };
 
-  const filteredSubs = subscriptions.filter(
-    (s) =>
-      s.userSlug.toLowerCase().includes(search.toLowerCase()) ||
-      s.userDisplayName.toLowerCase().includes(search.toLowerCase()) ||
-      s.email.toLowerCase().includes(search.toLowerCase()) ||
-      s.orderId.toLowerCase().includes(search.toLowerCase())
-  );
+  const activeSubs = subscriptions.filter((s) => s.status === 'active');
+  const noSubs = subscriptions.filter((s) => s.status !== 'active');
 
-  const activeCount = subscriptions.filter((s) => s.isActive).length;
+  const filteredSubs = subscriptions.filter((s) => {
+    const matchesSearch =
+      (s.userSlug || '').toLowerCase().includes(search.toLowerCase()) ||
+      (s.userDisplayName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (s.email || '').toLowerCase().includes(search.toLowerCase()) ||
+      (s.orderId || '').toLowerCase().includes(search.toLowerCase()) ||
+      (s.userId || '').toLowerCase().includes(search.toLowerCase());
+
+    if (!matchesSearch) return false;
+    if (filterTab === 'active') return s.status === 'active';
+    if (filterTab === 'none') return s.status !== 'active';
+    return true;
+  });
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto', color: '#fff' }}>
@@ -166,11 +180,15 @@ export default function SubscriptionsClient() {
             💎 Управление Подписками
           </h1>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#9ca3af' }}>
-            Выдача, продление, отслеживание и сброс активных подписок пользователей
+            Полный учет аккаунтов, выдача, продление и отслеживание сроков действия подписок
           </p>
         </div>
         <button
-          onClick={() => setShowIssueModal(true)}
+          onClick={() => {
+            setIssueUserId('');
+            setIssueEmail('');
+            setShowIssueModal(true);
+          }}
           className={styles.actionBtnPrimary}
           style={{ padding: '10px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
@@ -181,37 +199,91 @@ export default function SubscriptionsClient() {
       {/* Карточки метрик */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-card, #1e261e)', padding: '16px', borderRadius: '12px' }}>
-          <div style={{ fontSize: '12px', color: '#9ca3af' }}>Всего Подписок</div>
+          <div style={{ fontSize: '12px', color: '#9ca3af' }}>Всего Учётных Записей</div>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', marginTop: '4px' }}>{subscriptions.length}</div>
         </div>
         <div style={{ background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '16px', borderRadius: '12px' }}>
           <div style={{ fontSize: '12px', color: '#4ade80' }}>Активные Подписки</div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#4ade80', marginTop: '4px' }}>{activeCount}</div>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#4ade80', marginTop: '4px' }}>{activeSubs.length}</div>
         </div>
         <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '16px', borderRadius: '12px' }}>
-          <div style={{ fontSize: '12px', color: '#f87171' }}>Истёкшие / Отозванные</div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f87171', marginTop: '4px' }}>{subscriptions.length - activeCount}</div>
+          <div style={{ fontSize: '12px', color: '#f87171' }}>Без Подписки / Истёкшие</div>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f87171', marginTop: '4px' }}>{noSubs.length}</div>
         </div>
       </div>
 
-      {/* Фильтр и Поиск */}
-      <div style={{ marginBottom: '16px' }}>
+      {/* Переключатели табов и Поиск */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            type="button"
+            onClick={() => setFilterTab('all')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: '1px solid',
+              borderColor: filterTab === 'all' ? 'var(--accent, #4ade80)' : 'rgba(255,255,255,0.15)',
+              background: filterTab === 'all' ? 'rgba(74, 222, 128, 0.15)' : 'transparent',
+              color: filterTab === 'all' ? '#4ade80' : '#9ca3af',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+            }}
+          >
+            Все аккаунты ({subscriptions.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab('active')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: '1px solid',
+              borderColor: filterTab === 'active' ? '#4ade80' : 'rgba(255,255,255,0.15)',
+              background: filterTab === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
+              color: filterTab === 'active' ? '#4ade80' : '#9ca3af',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+            }}
+          >
+            ● Активные ({activeSubs.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab('none')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: '1px solid',
+              borderColor: filterTab === 'none' ? '#f87171' : 'rgba(255,255,255,0.15)',
+              background: filterTab === 'none' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
+              color: filterTab === 'none' ? '#f87171' : '#9ca3af',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+            }}
+          >
+            ○ Без подписки ({noSubs.length})
+          </button>
+        </div>
+
         <input
           type="text"
-          placeholder="Поиск по нику, E-mail или номеру заказа..."
+          placeholder="Поиск по нику, ID или E-mail..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className={styles.searchInput}
-          style={{ width: '100%', maxWidth: '400px' }}
+          style={{ width: '100%', maxWidth: '320px' }}
         />
       </div>
 
       {/* Таблица подписок */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>Загрузка подписок...</div>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>Загрузка пользователей и подписок...</div>
       ) : filteredSubs.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af', border: '1px dashed #333', borderRadius: '12px' }}>
-          Подписки не найдены
+          Пользователи не найдены
         </div>
       ) : (
         <div style={{ overflowX: 'auto', background: 'var(--bg-card, #0d120d)', border: '1px solid var(--border-card, #1e261e)', borderRadius: '12px' }}>
@@ -220,77 +292,102 @@ export default function SubscriptionsClient() {
               <tr style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--border-card, #1e261e)', textAlign: 'left' }}>
                 <th style={{ padding: '12px 16px' }}>Пользователь</th>
                 <th style={{ padding: '12px 16px' }}>Тариф</th>
-                <th style={{ padding: '12px 16px' }}>E-mail</th>
-                <th style={{ padding: '12px 16px' }}>№ Заказа</th>
-                <th style={{ padding: '12px 16px' }}>Выдана</th>
-                <th style={{ padding: '12px 16px' }}>Истекает</th>
                 <th style={{ padding: '12px 16px' }}>Статус</th>
+                <th style={{ padding: '12px 16px' }}>Дата истечения (Срок)</th>
                 <th style={{ padding: '12px 16px', textAlign: 'right' }}>Действия</th>
               </tr>
             </thead>
             <tbody>
-              {filteredSubs.map((sub) => (
-                <tr key={sub.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>
-                    @{sub.userSlug}
-                    <div style={{ fontSize: '11px', color: '#737373', fontWeight: 'normal' }}>{sub.userDisplayName}</div>
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(250, 204, 21, 0.15)', color: '#facc15', border: '1px solid rgba(250, 204, 21, 0.3)', fontWeight: 'bold', fontSize: '11px' }}>
-                      {sub.planName}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#9ca3af', fontFamily: 'monospace', fontSize: '12px' }}>
-                    {sub.email || '—'}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#9ca3af', fontFamily: 'monospace', fontSize: '12px' }}>
-                    {sub.orderId || '—'}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#737373', fontSize: '12px' }}>
-                    {new Date(sub.createdAt).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: sub.isActive ? '#4ade80' : '#f87171', fontSize: '12px' }}>
-                    {new Date(sub.expiresAt).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    {sub.status === 'active' && (
-                      <span style={{ padding: '2px 8px', borderRadius: '12px', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', fontSize: '11px', fontWeight: 'bold' }}>
-                        ● Активна
-                      </span>
-                    )}
-                    {sub.status === 'expired' && (
-                      <span style={{ padding: '2px 8px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', fontSize: '11px', fontWeight: 'bold' }}>
-                        ✕ Истёкла
-                      </span>
-                    )}
-                    {sub.status === 'revoked' && (
-                      <span style={{ padding: '2px 8px', borderRadius: '12px', background: 'rgba(156, 163, 175, 0.2)', color: '#9ca3af', fontSize: '11px', fontWeight: 'bold' }}>
-                        ⊘ Отозвана
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                      <button
-                        onClick={() => handleExtend(sub, 30)}
-                        style={{ padding: '4px 10px', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.4)', color: '#60a5fa', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-                        title="Продлить на 30 дней"
-                      >
-                        +30 дн.
-                      </button>
-                      {sub.status === 'active' && (
-                        <button
-                          onClick={() => handleRevoke(sub)}
-                          style={{ padding: '4px 10px', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#f87171', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
-                          title="Сбросить / Отозвать подписку"
-                        >
-                          Сброс
-                        </button>
+              {filteredSubs.map((sub) => {
+                const daysLeft = sub.expiresAt ? Math.max(0, Math.ceil((sub.expiresAt - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
+                return (
+                  <tr key={sub.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>
+                      @{sub.userSlug}
+                      <div style={{ fontSize: '11px', color: '#737373', fontWeight: 'normal' }}>{sub.userDisplayName}</div>
+                      <div style={{ fontSize: '10px', color: '#525252', fontFamily: 'monospace' }}>ID: {sub.userId}</div>
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      {sub.status === 'none' ? (
+                        <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#737373', border: '1px solid rgba(255,255,255,0.1)', fontSize: '11px' }}>
+                          Без подписки
+                        </span>
+                      ) : (
+                        <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(250, 204, 21, 0.15)', color: '#facc15', border: '1px solid rgba(250, 204, 21, 0.3)', fontWeight: 'bold', fontSize: '11px' }}>
+                          {sub.planName}
+                        </span>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      {sub.status === 'active' && (
+                        <span style={{ padding: '2px 8px', borderRadius: '12px', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', fontSize: '11px', fontWeight: 'bold' }}>
+                          ● Активна
+                        </span>
+                      )}
+                      {sub.status === 'expired' && (
+                        <span style={{ padding: '2px 8px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', fontSize: '11px', fontWeight: 'bold' }}>
+                          ✕ Истёкла
+                        </span>
+                      )}
+                      {sub.status === 'revoked' && (
+                        <span style={{ padding: '2px 8px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', fontSize: '11px', fontWeight: 'bold' }}>
+                          ⊘ Отозвана
+                        </span>
+                      )}
+                      {sub.status === 'none' && (
+                        <span style={{ padding: '2px 8px', borderRadius: '12px', background: 'rgba(115, 115, 115, 0.15)', color: '#a3a3a3', fontSize: '11px' }}>
+                          ○ Отсутствует
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: '12px' }}>
+                      {sub.expiresAt ? (
+                        <div>
+                          <span style={{ color: sub.status === 'active' ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>
+                            {new Date(sub.expiresAt).toLocaleDateString()}
+                          </span>
+                          <div style={{ fontSize: '11px', color: '#737373' }}>
+                            {sub.status === 'active' ? `Осталось: ${daysLeft} дн.` : 'Истекла'}
+                          </div>
+                        </div>
+                      ) : (
+                        <span style={{ color: '#525252' }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        {sub.status === 'none' ? (
+                          <button
+                            onClick={() => openIssueForUser(sub)}
+                            style={{ padding: '4px 10px', background: 'rgba(74, 222, 128, 0.15)', border: '1px solid rgba(74, 222, 128, 0.4)', color: '#4ade80', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                          >
+                            ✨ Выдать подписку
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleExtend(sub, 30)}
+                              style={{ padding: '4px 10px', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.4)', color: '#60a5fa', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                              title="Продлить на 30 дней"
+                            >
+                              +30 дн.
+                            </button>
+                            {sub.status === 'active' && (
+                              <button
+                                onClick={() => handleRevoke(sub)}
+                                style={{ padding: '4px 10px', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#f87171', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
+                                title="Сбросить / Отозвать подписку"
+                              >
+                                Сброс
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
