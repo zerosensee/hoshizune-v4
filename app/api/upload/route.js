@@ -71,16 +71,16 @@ export async function POST(request) {
     const hasSub = !!getUserActiveSubscription(user.id);
     const hasBypass = user.isAdmin || user.isOwner || hasSub || restrictions.includes('bypass_avatar_limit');
 
-    const maxSizeBytes = hasBypass ? 20 * 1024 * 1024 : 2 * 1024 * 1024;
+    const maxSizeBytes = hasBypass ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
 
     if (file.size > maxSizeBytes) {
-      const limitMb = hasBypass ? '20 МБ' : '2 МБ';
+      const limitMb = hasBypass ? '500 МБ' : '50 МБ';
       return NextResponse.json(
         {
           error: `Размер файла (${(file.size / (1024 * 1024)).toFixed(1)} МБ) превышает лимит ${limitMb}! ${
             hasBypass
               ? ''
-              : 'Оформите подписку Hoshizune VIP или обратитесь к администратору для снятия лимита до 20 МБ.'
+              : 'Оформите подписку Hoshizune VIP или обратитесь к администратору для снятия лимита до 500 МБ.'
           }`,
         },
         { status: 400 }
