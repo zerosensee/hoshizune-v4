@@ -60,87 +60,16 @@ export default function SubscriptionClient({ currentUser, initialSubscription })
         position: 'relative',
       }}
     >
-      {/* Навигационная плашка с кнопкой НАЗАД и НА ГЛАВНУЮ */}
+      {/* Навигация (отображается через GlobalNavigationWidget), здесь остаётся только правый индикатор пользователя */}
       <div
         style={{
           maxWidth: '1000px',
           margin: '0 auto 32px auto',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
         }}
       >
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            type="button"
-            onClick={() => {
-              if (window.history.length > 1) {
-                router.back();
-              } else {
-                router.push('/');
-              }
-            }}
-            style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#ffffff',
-              padding: '10px 18px',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#c084fc';
-              e.currentTarget.style.boxShadow = '0 0 15px rgba(192, 132, 252, 0.3)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-              e.currentTarget.style.boxShadow = 'none';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            ← Назад
-          </button>
-
-          <Link
-            href="/"
-            style={{
-              background: 'rgba(192, 132, 252, 0.12)',
-              border: '1px solid rgba(192, 132, 252, 0.4)',
-              color: '#c084fc',
-              padding: '10px 18px',
-              borderRadius: '10px',
-              textDecoration: 'none',
-              fontSize: '13px',
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(192, 132, 252, 0.25)';
-              e.currentTarget.style.boxShadow = '0 0 20px rgba(192, 132, 252, 0.4)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(192, 132, 252, 0.12)';
-              e.currentTarget.style.boxShadow = 'none';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            🏠 На главную
-          </Link>
-        </div>
-
         <div style={{ fontSize: '12px', color: '#a3a3a3' }}>
           {currentUser ? `Вы вошли как: ${currentUser.email}` : 'Гость'}
         </div>

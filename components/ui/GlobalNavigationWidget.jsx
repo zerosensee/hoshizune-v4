@@ -13,8 +13,8 @@ export default function GlobalNavigationWidget() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Не отображаем плавающую панель только на самой главной странице
-  if (pathname === '/') {
+  // Не отображаем плавающую панель на главной и в админ-панели (у админки своё меню)
+  if (pathname === '/' || pathname.startsWith('/admin')) {
     return null;
   }
 

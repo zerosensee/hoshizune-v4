@@ -153,55 +153,7 @@ export default function ExploreClient({
   return (
     <div className="explore-page" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px' }}>
       {/* Шапка */}
-      <div className="explore-header" style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: 14 }}>
-          <button
-            type="button"
-            className="explore-back-btn"
-            onClick={() => {
-              if (typeof window !== 'undefined' && window.history.length > 1) {
-                router.back();
-              } else {
-                router.push('/');
-              }
-            }}
-            style={{
-              fontSize: 12,
-              fontFamily: 'var(--font-mono)',
-              color: 'var(--text-primary, #ffffff)',
-              background: 'var(--bg-card, #0f1210)',
-              border: '1px solid var(--border-card, rgba(255,255,255,0.15))',
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-sm, 6px)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            ← Назад
-          </button>
-          <Link
-            href="/"
-            style={{
-              fontSize: 12,
-              fontFamily: 'var(--font-mono)',
-              color: 'var(--accent, #4ade80)',
-              background: 'var(--bg-card, #0f1210)',
-              border: '1px solid var(--accent, rgba(74,222,128,0.4))',
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-sm, 6px)',
-              textDecoration: 'none',
-              transition: 'all 0.15s ease',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            🏠 На главную
-          </Link>
-        </div>
+      <div className="explore-header" style={{ marginBottom: 20, paddingTop: 30 }}>
         <h1 className="explore-title">
           <span className="explore-title__accent">$</span>
           {' '}explore
