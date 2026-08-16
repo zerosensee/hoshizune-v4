@@ -829,7 +829,6 @@ body.no-animations *::before,
 body.no-animations *::after {
   animation: none !important;
   transition: none !important;
-  transform: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1631,6 +1630,5 @@ body.no-animations .btn,
 body.no-animations [class*="profile-card"] {
   animation: none !important;
   transition: none !important;
-  transform: none !important;
 }
 

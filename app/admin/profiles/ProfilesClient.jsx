@@ -561,139 +561,146 @@ export default function ProfilesClient({ initialProfiles = [], currentUser }) {
 
       {/* Таблица профилей */}
       <div className={styles.tableWrap}>
-        <table>
-          <thead>
-            <tr>
-              <th style={{ whiteSpace: 'nowrap' }}>Пользователь / Имя</th>
-              <th style={{ whiteSpace: 'nowrap' }}>Уровень (LVL)</th>
-              <th style={{ whiteSpace: 'nowrap' }}>Slug</th>
-              <th style={{ whiteSpace: 'nowrap' }}>Статус</th>
-              <th style={{ whiteSpace: 'nowrap' }}>Просмотры</th>
-              <th style={{ whiteSpace: 'nowrap' }}>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
+        <div className={styles.tableScroll}>
+          <table style={{ width: '100%', minWidth: '820px', tableLayout: 'auto' }}>
+            <thead>
               <tr>
-                <td colSpan={6}>
-                  <div className={styles.emptyState}>
-                    <div className={styles.emptyStateIcon}>◎</div>
-                    Профили не найдены
-                  </div>
-                </td>
+                <th style={{ whiteSpace: 'nowrap' }}>Пользователь / Имя & ID</th>
+                <th style={{ whiteSpace: 'nowrap' }}>Уровень (LVL)</th>
+                <th style={{ whiteSpace: 'nowrap' }}>Slug</th>
+                <th style={{ whiteSpace: 'nowrap' }}>Статус</th>
+                <th style={{ whiteSpace: 'nowrap' }}>Просмотры</th>
+                <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Действия</th>
               </tr>
-            ) : (
-              filtered.map((profile) => {
-                const badge = getLevelBadge(profile.level || 1);
-                const roleBadge = getRoleBadge(profile.role || (profile.isOwner ? 'owner' : 'user'));
-                const st = getStatusBadgeStyle(profile.effectiveStatus || profile.status);
-                return (
-                  <tr key={profile.id}>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <div className={styles.tdName} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <span>{profile.displayName}</span>
-                        <BadgesContainer badges={profile.badges || []} maxVisible={2} size="small" />
-                      </div>
-                    </td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          fontFamily: 'var(--font-mono, monospace)',
-                          fontWeight: 'bold',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          color: badge.color,
-                          background: badge.background,
-                          border: badge.border,
-                          boxShadow: badge.glow,
-                          whiteSpace: 'nowrap',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        LVL {badge.level} ({badge.title})
-                      </span>
-                    </td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <Link
-                        href={`/bio/${profile.slug}`}
-                        target="_blank"
-                        className={styles.tdSlug}
-                        style={{ textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        @{profile.slug} ↗
-                      </Link>
-                    </td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          fontFamily: 'var(--font-mono, monospace)',
-                          fontWeight: 'bold',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          color: st.color,
-                          background: st.background,
-                          border: st.border,
-                          boxShadow: st.glow,
-                          whiteSpace: 'nowrap',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        ● {st.label}
-                      </span>
-                    </td>
-                    <td className={styles.tdMuted} style={{ whiteSpace: 'nowrap' }}>{profile.viewCount} просм.</td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button
-                          type="button"
-                          className={styles.actionBtn}
-                          onClick={() => startEdit(profile)}
-                          style={{ color: '#facc15', borderColor: 'rgba(250, 204, 21, 0.3)' }}
-                        >
-                          ✎ Управлять
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.actionBtn}
-                          onClick={() => setTelemetryProfile(profile)}
-                          style={{ color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.4)', background: 'rgba(56, 189, 248, 0.1)' }}
-                        >
-                          🔍 Сведения
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.actionBtn}
-                          onClick={() => openBanModal(profile)}
-                          style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.1)' }}
-                        >
-                          🔨 Баны/Сессии
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.actionBtnDanger}
-                          onClick={() => promptDelete(profile)}
-                          disabled={profile.isOwner}
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6}>
+                    <div className={styles.emptyState}>
+                      <div className={styles.emptyStateIcon}>◎</div>
+                      Профили не найдены
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((profile) => {
+                  const badge = getLevelBadge(profile.level || 1);
+                  const roleBadge = getRoleBadge(profile.role || (profile.isOwner ? 'owner' : 'user'));
+                  const st = getStatusBadgeStyle(profile.effectiveStatus || profile.status);
+                  return (
+                    <tr key={profile.id}>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <div className={styles.tdName} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontWeight: '700', fontSize: '13px' }}>{profile.displayName}</span>
+                            <BadgesContainer badges={profile.badges || []} maxVisible={2} size="small" />
+                          </div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted, #737373)', fontFamily: 'var(--font-mono, monospace)', opacity: 0.85 }}>
+                            ID: {profile.userId || profile.id}
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <span
                           style={{
-                            opacity: profile.isOwner ? 0.4 : 1,
-                            cursor: profile.isOwner ? 'not-allowed' : 'pointer',
+                            fontSize: '11px',
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontWeight: 'bold',
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            color: badge.color,
+                            background: badge.background,
+                            border: badge.border,
+                            boxShadow: badge.glow,
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
                           }}
                         >
-                          ✕ Удалить
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                          LVL {badge.level} ({badge.title})
+                        </span>
+                      </td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <Link
+                          href={`/bio/${profile.slug}`}
+                          target="_blank"
+                          className={styles.tdSlug}
+                          style={{ textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          @{profile.slug} ↗
+                        </Link>
+                      </td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontFamily: 'var(--font-mono, monospace)',
+                            fontWeight: 'bold',
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            color: st.color,
+                            background: st.background,
+                            border: st.border,
+                            boxShadow: st.glow,
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          ● {st.label}
+                        </span>
+                      </td>
+                      <td className={styles.tdMuted} style={{ whiteSpace: 'nowrap' }}>{profile.viewCount} просм.</td>
+                      <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className={styles.actionBtn}
+                            onClick={() => startEdit(profile)}
+                            style={{ color: '#facc15', borderColor: 'rgba(250, 204, 21, 0.3)' }}
+                          >
+                            ✎ Управлять
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.actionBtn}
+                            onClick={() => setTelemetryProfile(profile)}
+                            style={{ color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.4)', background: 'rgba(56, 189, 248, 0.1)' }}
+                          >
+                            🔍 Сведения
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.actionBtn}
+                            onClick={() => openBanModal(profile)}
+                            style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.1)' }}
+                          >
+                            🔨 Баны
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.actionBtnDanger}
+                            onClick={() => promptDelete(profile)}
+                            disabled={profile.isOwner}
+                            style={{
+                              opacity: profile.isOwner ? 0.4 : 1,
+                              cursor: profile.isOwner ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            ✕ Удалить
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Модалка панели редактирования */}

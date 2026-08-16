@@ -12,7 +12,7 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
   useEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      if (rect.left < 220) {
+      if (rect.left < 380) {
         setAlignLeft(true);
       } else {
         setAlignLeft(false);
