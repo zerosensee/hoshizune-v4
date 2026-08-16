@@ -435,7 +435,20 @@ export default function AuthClient({ defaultMode = 'login' }) {
                   </div>
                 )}
 
-                <div className="modal-actions" style={{ marginTop: 20 }}>
+                <div className="modal-actions" style={{ marginTop: 20, display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="modal-btn"
+                    onClick={() => {
+                      if (typeof window !== 'undefined' && window.history.length > 1) {
+                        window.history.back();
+                      } else {
+                        window.location.href = '/';
+                      }
+                    }}
+                  >
+                    ← Назад
+                  </button>
                   <Link
                     href="/"
                     className="modal-btn"
@@ -446,7 +459,7 @@ export default function AuthClient({ defaultMode = 'login' }) {
                       lineHeight: '26px',
                     }}
                   >
-                    ← На главную
+                    🏠 На главную
                   </Link>
                   <button
                     type="submit"

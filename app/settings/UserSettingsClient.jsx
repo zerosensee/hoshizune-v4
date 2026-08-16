@@ -43,6 +43,15 @@ export default function UserSettingsClient() {
   /* Состояние типографики и шрифта */
   const [fontSize, setFontSize] = useState('100%');
   const [fontFamily, setFontFamily] = useState('jetbrains');
+  const [enableAnimations, setEnableAnimations] = useState(true);
+
+  useEffect(() => {
+    const savedAnim = localStorage.getItem('enable_animations');
+    if (savedAnim === 'false') {
+      setEnableAnimations(false);
+      document.body.classList.add('no-animations');
+    }
+  }, []);
 
   // Настройки бара времени
   const [clockPosition, setClockPosition] = useState('bottom-center');
@@ -880,8 +889,71 @@ export default function UserSettingsClient() {
               </label>
             </div>
 
+            {/* Опция анимаций и FX */}
+            <div
+              className="modal-field"
+              style={{
+                borderTop: `1px solid ${activePreset.border}`,
+                paddingTop: 16,
+                marginTop: 16,
+              }}
+            >
+              <label style={{ color: activePreset.textMuted, marginBottom: 8, display: 'block' }}>
+                АНИМАЦИИ И ВИЗУАЛЬНЫЕ ЭФФЕКТЫ
+              </label>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  color: activePreset.textPrimary,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={enableAnimations}
+                  onChange={(e) => {
+                    setEnableAnimations(e.target.checked);
+                    if (e.target.checked) {
+                      document.body.classList.remove('no-animations');
+                      localStorage.setItem('enable_animations', 'true');
+                    } else {
+                      document.body.classList.add('no-animations');
+                      localStorage.setItem('enable_animations', 'false');
+                    }
+                  }}
+                  style={{
+                    width: 16,
+                    height: 16,
+                    accentColor: activePreset.accent,
+                    cursor: 'pointer',
+                  }}
+                />
+                <span>Включить микро-анимации наведения для кнопок и карточек профилей</span>
+              </label>
+            </div>
+
             {/* Действия */}
-            <div className="modal-actions" style={{ marginTop: 24, display: 'flex', gap: 10 }}>
+            <div className="modal-actions" style={{ marginTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="modal-btn"
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    router.back();
+                  } else {
+                    router.push('/');
+                  }
+                }}
+                style={{
+                  borderColor: activePreset.border,
+                  color: activePreset.textPrimary,
+                }}
+              >
+                ← Назад
+              </button>
               <button
                 type="button"
                 className="modal-btn"
@@ -891,7 +963,7 @@ export default function UserSettingsClient() {
                   color: activePreset.textPrimary,
                 }}
               >
-                ← На главную
+                🏠 На главную
               </button>
               <button
                 type="submit"

@@ -49,11 +49,40 @@ export async function POST(request) {
       );
     }
 
-    /* Проверка типа (разрешаем стандартные фоновые и аватарные картинки) */
+    /* Проверка формата файла */
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
     const mime = (file.type || '').toLowerCase();
-    if (!mime.startsWith('image/')) {
+    if (!allowedMimes.includes(mime) && !mime.startsWith('image/')) {
       return NextResponse.json(
-        { error: 'Допустимы только графические файлы (JPEG, PNG, WebP, GIF, SVG, AVIF)' },
+        { error: 'Неподдерживаемый формат! Допустимы только изображения: JPG, PNG, GIF, WebP, AVIF' },
+        { status: 400 }
+      );
+    }
+
+    /* Определение допустимого размера (2 МБ базовый, 20 МБ с VIP или спец. разрешением) */
+    let restrictions = [];
+    if (profileRow?.restrictions) {
+      try {
+        restrictions = JSON.parse(profileRow.restrictions);
+      } catch {}
+    }
+
+    const { getUserActiveSubscription } = await import('@/lib/subscription-repository');
+    const hasSub = !!getUserActiveSubscription(user.id);
+    const hasBypass = user.isAdmin || user.isOwner || hasSub || restrictions.includes('bypass_avatar_limit');
+
+    const maxSizeBytes = hasBypass ? 20 * 1024 * 1024 : 2 * 1024 * 1024;
+
+    if (file.size > maxSizeBytes) {
+      const limitMb = hasBypass ? '20 МБ' : '2 МБ';
+      return NextResponse.json(
+        {
+          error: `Размер файла (${(file.size / (1024 * 1024)).toFixed(1)} МБ) превышает лимит ${limitMb}! ${
+            hasBypass
+              ? ''
+              : 'Оформите подписку Hoshizune VIP или обратитесь к администратору для снятия лимита до 20 МБ.'
+          }`,
+        },
         { status: 400 }
       );
     }

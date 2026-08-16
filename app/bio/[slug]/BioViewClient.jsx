@@ -439,24 +439,31 @@ export default function BioViewClient({
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: 20, flexWrap: 'wrap' }}>
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.history.length > 1) {
+                  router.back();
+                } else {
+                  router.push('/');
+                }
+              }}
               style={{
                 background: theme.bgCard,
                 border: `1px solid ${theme.border}`,
                 color: theme.textPrimary,
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '12px',
+                padding: '10px 18px',
+                borderRadius: '10px',
+                fontSize: '13px',
                 fontWeight: 'bold',
                 fontFamily: 'var(--font-mono)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                backdropFilter: 'blur(10px)',
               }}
             >
               ← Назад
@@ -467,19 +474,41 @@ export default function BioViewClient({
                 background: 'var(--accent-glow, rgba(74, 222, 128, 0.12))',
                 border: `1px solid ${theme.accent}`,
                 color: theme.accent,
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '12px',
+                padding: '10px 18px',
+                borderRadius: '10px',
+                fontSize: '13px',
                 fontWeight: 'bold',
                 fontFamily: 'var(--font-mono)',
                 textDecoration: 'none',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                backdropFilter: 'blur(10px)',
               }}
             >
               🏠 На главную
+            </Link>
+            <Link
+              href="/subscription"
+              style={{
+                background: 'rgba(192, 132, 252, 0.15)',
+                border: '1px solid rgba(192, 132, 252, 0.6)',
+                color: '#c084fc',
+                padding: '10px 18px',
+                borderRadius: '10px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                fontFamily: 'var(--font-mono)',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              💎 Подписка VIP
             </Link>
           </div>
         </div>

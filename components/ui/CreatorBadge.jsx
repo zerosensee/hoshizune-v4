@@ -14,10 +14,44 @@ export default function CreatorBadge() {
         left: '16px',
         zIndex: 9999,
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '8px',
         fontFamily: 'var(--font-mono, monospace)',
       }}
     >
+      {/* Кнопка быстрого перехода в Подписки */}
+      <Link
+        href="/subscription"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '6px 12px',
+          background: 'rgba(24, 15, 38, 0.9)',
+          border: '1px solid rgba(192, 132, 252, 0.6)',
+          borderRadius: '10px',
+          boxShadow: '0 4px 18px rgba(192, 132, 252, 0.3)',
+          backdropFilter: 'blur(12px)',
+          color: '#c084fc',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          textDecoration: 'none',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 6px 24px rgba(192, 132, 252, 0.5)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 18px rgba(192, 132, 252, 0.3)';
+        }}
+      >
+        <span>💎</span>
+        <span>Подписка VIP</span>
+      </Link>
+
       {/* Кнопка с эффектом стекла */}
       <div
         style={{

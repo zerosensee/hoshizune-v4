@@ -60,7 +60,7 @@ export async function GET(request, context) {
   <div class="box">
     <div class="code">404</div>
     <div class="msg">Ссылка не найдена или истёк срок действия.</div>
-    <a href="/">← Вернуться на главную</a>
+    <a href="/" style="background:rgba(74,222,128,0.12);border:1px solid #4ade80;color:#4ade80;padding:10px 20px;border-radius:8px;font-weight:bold;margin-top:1.5rem;display:inline-block;box-shadow:0 4px 16px rgba(74,222,128,0.2);">🏠 Вернуться на главную</a>
   </div>
 </body>
 </html>`,

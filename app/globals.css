@@ -1610,3 +1610,27 @@ body.theme-pure-light [class*="formBox"] {
   }
 }
 
+/* Базовые микро-анимации для кнопок и профилей */
+button, .btn, .modal-btn, a[class*="btn"], [class*="actionBtn"], [class*="profile-card"] {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease, border-color 0.2s ease;
+}
+
+button:hover, .btn:hover, .modal-btn:hover, [class*="actionBtn"]:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+[class*="profile-card"]:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 30px var(--accent-glow, rgba(74, 222, 128, 0.25));
+}
+
+/* Полное отключение анимаций по тумблеру в настройках */
+body.no-animations *,
+body.no-animations button,
+body.no-animations .btn,
+body.no-animations [class*="profile-card"] {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+

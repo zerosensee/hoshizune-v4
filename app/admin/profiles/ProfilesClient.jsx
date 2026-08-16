@@ -1043,6 +1043,23 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                   />
                   <span>✏️ Запретить редактировать Bio и Имя</span>
                 </label>
+
+                {/* Персональный доступ: Снять лимит размера аватарки (До 20МБ) */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: '#86efac' }}>
+                  <input
+                    type="checkbox"
+                    checked={editRestrictions.includes('bypass_avatar_limit')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setEditRestrictions((prev) => [...prev, 'bypass_avatar_limit']);
+                      } else {
+                        setEditRestrictions((prev) => prev.filter((r) => r !== 'bypass_avatar_limit'));
+                      }
+                    }}
+                    style={{ accentColor: '#22c55e' }}
+                  />
+                  <span>🔓 Снять лимит аватарки (Разрешить до 20 МБ без VIP)</span>
+                </label>
               </div>
             </div>
 

@@ -59,16 +59,27 @@ export default async function BioPage({ params }) {
             404
           </h1>
           <p>Профиль не найден</p>
-          <a
-            href="/"
-            style={{
-              color: '#4ade80',
-              marginTop: 16,
-              display: 'inline-block',
-            }}
-          >
-            ← На главную
-          </a>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: 20 }}>
+            <a
+              href="/"
+              style={{
+                background: 'rgba(74, 222, 128, 0.12)',
+                border: '1px solid #4ade80',
+                color: '#4ade80',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 16px rgba(74, 222, 128, 0.2)',
+              }}
+            >
+              🏠 Вернуться на главную
+            </a>
+          </div>
         </div>
       </main>
     );
