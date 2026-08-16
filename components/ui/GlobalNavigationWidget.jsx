@@ -113,41 +113,43 @@ export default function GlobalNavigationWidget() {
         <span>На главную</span>
       </Link>
 
-      {/* Кнопка "💎 VIP Подписка" */}
-      <Link
-        href="/subscription"
-        style={{
-          background: 'rgba(24, 15, 38, 0.85)',
-          border: '1px solid rgba(192, 132, 252, 0.5)',
-          color: '#c084fc',
-          padding: '8px 14px',
-          borderRadius: '10px',
-          textDecoration: 'none',
-          fontSize: '12px',
-          fontWeight: 'bold',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          boxShadow: '0 4px 20px rgba(192, 132, 252, 0.25)',
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(192, 132, 252, 0.25)';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 6px 24px rgba(192, 132, 252, 0.5)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(24, 15, 38, 0.85)';
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 4px 20px rgba(192, 132, 252, 0.25)';
-        }}
-        title="Перейти в раздел подписок"
-      >
-        <span>💎</span>
-        <span>VIP</span>
-      </Link>
+      {/* Кнопка "💎 VIP Подписка" (не отображается на странице подписок) */}
+      {!pathname?.startsWith('/subscription') && (
+        <Link
+          href="/subscription"
+          style={{
+            background: 'rgba(24, 15, 38, 0.85)',
+            border: '1px solid rgba(192, 132, 252, 0.5)',
+            color: '#c084fc',
+            padding: '8px 14px',
+            borderRadius: '10px',
+            textDecoration: 'none',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            boxShadow: '0 4px 20px rgba(192, 132, 252, 0.25)',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(192, 132, 252, 0.25)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 24px rgba(192, 132, 252, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(24, 15, 38, 0.85)';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(192, 132, 252, 0.25)';
+          }}
+          title="Перейти в раздел подписок"
+        >
+          <span>💎</span>
+          <span>VIP</span>
+        </Link>
+      )}
     </div>
   );
 }
