@@ -13,8 +13,20 @@ export const metadata = {
 };
 
 export async function AdminProfilesPage() {
-  const profiles = getAllProfiles();
-  const currentUser = await getCurrentUser();
+  let profiles = [];
+  let currentUser = null;
+
+  try {
+    profiles = getAllProfiles() || [];
+  } catch (err) {
+    console.error('[AdminProfilesPage] Ошибка получения профилей:', err);
+  }
+
+  try {
+    currentUser = await getCurrentUser();
+  } catch (err) {
+    console.error('[AdminProfilesPage] Ошибка получения текущего пользователя:', err);
+  }
 
   return (
     <AdminLayoutClient>

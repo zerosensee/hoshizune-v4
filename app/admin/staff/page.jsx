@@ -1,3 +1,4 @@
+import AdminLayoutClient from '../AdminLayoutClient';
 import StaffClient from './StaffClient';
 
 export const dynamic = 'force-dynamic';
@@ -7,5 +8,9 @@ export const metadata = {
 };
 
 export default function StaffPage() {
-  return <StaffClient />;
+  return (
+    <AdminLayoutClient>
+      <StaffClient />
+    </AdminLayoutClient>
+  );
 }

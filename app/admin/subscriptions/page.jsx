@@ -1,3 +1,4 @@
+import AdminLayoutClient from '../AdminLayoutClient';
 import SubscriptionsClient from './SubscriptionsClient';
 
 export const dynamic = 'force-dynamic';
@@ -7,5 +8,9 @@ export const metadata = {
 };
 
 export default function SubscriptionsPage() {
-  return <SubscriptionsClient />;
+  return (
+    <AdminLayoutClient>
+      <SubscriptionsClient />
+    </AdminLayoutClient>
+  );
 }

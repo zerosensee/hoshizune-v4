@@ -268,7 +268,13 @@ function SmoothAreaChart({ data }) {
 function CurvedDonutChart({ items }) {
   const [activeIdx, setActiveIdx] = useState(null);
 
-  const total = items.reduce((sum, item) => sum + (item.value || 0), 0);
+  const realTotal = items.reduce((sum, item) => sum + (item.value || 0), 0);
+  const isZero = realTotal === 0;
+  const displayItems = isZero
+    ? items.map((it) => ({ ...it, value: 1 }))
+    : items;
+  const total = displayItems.reduce((sum, item) => sum + (item.value || 0), 0);
+
   const size = 220;
   const strokeWidth = 18;
   const radius = 78;
@@ -276,7 +282,7 @@ function CurvedDonutChart({ items }) {
 
   let accumulatedPercent = 0;
 
-  const slices = items.map((item, idx) => {
+  const slices = displayItems.map((item, idx) => {
     const val = item.value || 0;
     const pct = total > 0 ? val / total : 0;
     const strokeDash = pct * circumference;
@@ -288,14 +294,15 @@ function CurvedDonutChart({ items }) {
     return {
       ...item,
       idx,
-      pct: Math.round(pct * 100),
+      realValue: items[idx]?.value || 0,
+      pct: isZero ? 0 : Math.round(pct * 100),
       strokeDash,
       gap,
       offset,
     };
   });
 
-  const activeItem = activeIdx !== null ? items[activeIdx] : null;
+  const activeItem = activeIdx !== null ? slices[activeIdx] : null;
 
   return (
     <div className={styles.chartCard}>
@@ -308,7 +315,7 @@ function CurvedDonutChart({ items }) {
             Фигурная кольцевая диаграмма ресурсов
           </div>
         </div>
-        <span className={styles.chartBadge}>Всего: {total}</span>
+        <span className={styles.chartBadge}>Всего: {realTotal}</span>
       </div>
 
       <div className={styles.donutContainer}>
@@ -324,14 +331,13 @@ function CurvedDonutChart({ items }) {
               cy={size / 2}
               r={radius}
               fill="none"
-              stroke="rgba(255, 255, 255, 0.05)"
+              stroke="rgba(255, 255, 255, 0.08)"
               strokeWidth={strokeWidth}
             />
 
             {/* Фигурные скруглённые сегменты кольца */}
             {slices.map((slice) => {
               const isHovered = activeIdx === slice.idx;
-              if (slice.pct <= 0) return null;
 
               return (
                 <circle
@@ -347,9 +353,10 @@ function CurvedDonutChart({ items }) {
                   strokeLinecap="round"
                   transform={`rotate(-90 ${size / 2} ${size / 2})`}
                   style={{
+                    opacity: isZero ? 0.4 : 1,
                     transition: 'all 0.25s ease',
                     cursor: 'pointer',
-                    filter: isHovered ? `drop-shadow(0 0 8px ${slice.color})` : 'none',
+                    filter: isHovered || !isZero ? `drop-shadow(0 0 8px ${slice.color})` : 'none',
                   }}
                   onMouseEnter={() => setActiveIdx(slice.idx)}
                   onMouseLeave={() => setActiveIdx(null)}
@@ -361,7 +368,7 @@ function CurvedDonutChart({ items }) {
           {/* Текст в центре кольца */}
           <div className={styles.donutCenterText}>
             <div className={styles.donutCenterVal} style={{ color: activeItem ? activeItem.color : '#ffffff' }}>
-              {activeItem ? activeItem.value : total}
+              {activeItem ? activeItem.realValue : realTotal}
             </div>
             <div className={styles.donutCenterLabel}>
               {activeItem ? activeItem.label : 'ОБЪЕКТОВ'}
