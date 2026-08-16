@@ -7,9 +7,6 @@ import { NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  getProfileById,
-  updateProfile,
 import { getCurrentUser } from '@/lib/user-auth';
 import { getDatabase } from '@/lib/database';
 
