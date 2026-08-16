@@ -11,11 +11,14 @@ import styles from '../admin.module.css';
 import { getLevelBadge } from '@/lib/level-utils';
 import BadgesContainer from '@/components/ui/BadgesContainer';
 import GlassSelect from '@/components/ui/GlassSelect';
+import { parseUserAgent } from '@/lib/telemetry';
+
 export default function ProfilesClient({ initialProfiles, currentUser }) {
   const [profiles, setProfiles] = useState(initialProfiles);
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState(null);
   const [allRolesList, setAllRolesList] = useState([]);
+  const [telemetryProfile, setTelemetryProfile] = useState(null);
 
   const isOwnerUser = currentUser?.role === 'owner' || currentUser?.isOwner || true;
 
@@ -41,6 +44,7 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
   const [editRoles, setEditRoles] = useState(['user']);
   const [editTitles, setEditTitles] = useState([]);
   const [editStatus, setEditStatus] = useState('online');
+  const [editTrackOnline, setEditTrackOnline] = useState(true);
   const [showRolesDrawer, setShowRolesDrawer] = useState(false);
   const [editViewCount, setEditViewCount] = useState(0);
   const [editEmail, setEditEmail] = useState('');
@@ -208,6 +212,7 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
     setEditAccent(profile.accentColor || '#4ade80');
     setEditLevel(profile.level || 1);
     setEditStatus(profile.status || profile.effectiveStatus || 'online');
+    setEditTrackOnline(profile.track_online !== 0 && profile.trackOnline !== false);
 
     const initialRoles = Array.isArray(profile.roles) && profile.roles.length > 0
       ? profile.roles
@@ -282,6 +287,7 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
           accentColor: editAccent,
           level: parseInt(editLevel, 10) || 1,
           status: editStatus,
+          trackOnline: editTrackOnline,
           viewCount: parseInt(editViewCount, 10) || 0,
           allowComments: editAllowComments,
           restrictions: editRestrictions,
@@ -654,6 +660,14 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                         <button
                           type="button"
                           className={styles.actionBtn}
+                          onClick={() => setTelemetryProfile(profile)}
+                          style={{ color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.4)', background: 'rgba(56, 189, 248, 0.1)' }}
+                        >
+                          🔍 Сведения
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.actionBtn}
                           onClick={() => openBanModal(profile)}
                           style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.1)' }}
                         >
@@ -853,10 +867,23 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                   style={{ background: 'var(--bg-card, #0a0d0a)', cursor: 'pointer' }}
                 >
                   <option value="online">🟢 В сети (Online)</option>
+                  <option value="idle">🟡 Неактивен (Idle)</option>
                   <option value="dnd">🔴 Не беспокоить (DND)</option>
-                  <option value="inactive">🟡 Неактивен (Idle)</option>
-                  <option value="offline">⚪ Не в сети (Offline)</option>
+                  <option value="offline">⚪ Не в сети / Скрыт (Offline)</option>
                 </select>
+              </div>
+
+              {/* Автоматическое отслеживание онлайна */}
+              <div className={styles.formField} style={{ gridColumn: 'span 2' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: '#ffffff' }}>
+                  <input
+                    type="checkbox"
+                    checked={editTrackOnline}
+                    onChange={(e) => setEditTrackOnline(e.target.checked)}
+                    style={{ accentColor: '#4ade80', width: '16px', height: '16px' }}
+                  />
+                  <span>⚡ Автоматическое отслеживание онлайна ( Heartbeat )</span>
+                </label>
               </div>
 
               {/* Выдача Системных Ролей и Кастомных Титулов */}
@@ -1806,6 +1833,177 @@ export default function ProfilesClient({ initialProfiles, currentUser }) {
                 type="button"
                 className={styles.cancelBtn}
                 onClick={() => setBanModalProfile(null)}
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно Телеметрии и сведений о пользователе */}
+      {telemetryProfile && (
+        <div className={styles.formModal}>
+          <div
+            className={styles.formBox}
+            style={{
+              maxWidth: '560px',
+              width: '100%',
+              background: 'var(--bg-card, #0a0d0a)',
+              border: '1px solid var(--accent, #38bdf8)',
+              borderRadius: '12px',
+              padding: '24px',
+              boxShadow: '0 20px 60px rgba(56, 189, 248, 0.25)',
+              color: '#ffffff',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '16px',
+                paddingBottom: '12px',
+                borderBottom: '1px solid rgba(56, 189, 248, 0.3)',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🔍 Телеметрия и Сведения: {telemetryProfile.displayName}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTelemetryProfile(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#9ca3af',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {(() => {
+              const uaInfo = parseUserAgent(telemetryProfile.last_user_agent || telemetryProfile.userAgent || '');
+              const osName = telemetryProfile.os_info || uaInfo.os;
+              const browserName = telemetryProfile.browser_info || uaInfo.browser;
+              const deviceType = telemetryProfile.device_info || uaInfo.device;
+              const lastIp = telemetryProfile.last_ip || '127.0.0.1';
+              const lastSeenMs = telemetryProfile.lastSeen || telemetryProfile.last_seen || 0;
+              const diffSec = Math.floor((Date.now() - lastSeenMs) / 1000);
+
+              let relativeOnline = 'Давно';
+              if (lastSeenMs === 0) relativeOnline = 'Никогда';
+              else if (diffSec < 60) relativeOnline = 'Только что (В сети)';
+              else if (diffSec < 3600) relativeOnline = `${Math.floor(diffSec / 60)} мин. назад`;
+              else if (diffSec < 86400) relativeOnline = `${Math.floor(diffSec / 3600)} ч. назад`;
+              else relativeOnline = `${Math.floor(diffSec / 86400)} дн. назад`;
+
+              const exactTime = lastSeenMs ? new Date(lastSeenMs).toLocaleString('ru-RU') : 'Нет данных';
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
+                  {/* Блок Онлайна */}
+                  <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                      ⚡ Онлайн и Активность
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div>
+                        <span style={{ color: '#9ca3af', display: 'block', fontSize: '11px' }}>Статус активности:</span>
+                        <span style={{ fontWeight: 'bold', color: '#4ade80' }}>● {relativeOnline}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#9ca3af', display: 'block', fontSize: '11px' }}>Точное время:</span>
+                        <span style={{ fontFamily: 'monospace' }}>{exactTime}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Сетевые Данные */}
+                  <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                      🌐 Сеть и IP Адрес
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <span style={{ color: '#9ca3af', display: 'block', fontSize: '11px' }}>Последний IP-адрес:</span>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#facc15', fontSize: '14px' }}>{lastIp}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(lastIp);
+                          showToast('IP адрес скопирован!');
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(250, 204, 21, 0.4)',
+                          background: 'rgba(250, 204, 21, 0.1)',
+                          color: '#facc15',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        📋 Копировать IP
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Устройство и ОС */}
+                  <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                      💻 Устройство и Браузер
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                      <div>
+                        <span style={{ color: '#9ca3af', display: 'block', fontSize: '11px' }}>ОС:</span>
+                        <span style={{ fontWeight: 'bold' }}>{osName}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#9ca3af', display: 'block', fontSize: '11px' }}>Браузер:</span>
+                        <span style={{ fontWeight: 'bold' }}>{browserName}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#9ca3af', display: 'block', fontSize: '11px' }}>Устройство:</span>
+                        <span style={{ fontWeight: 'bold' }}>{deviceType}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Полный User-Agent */}
+                  <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', marginBottom: '4px' }}>
+                      📄 Полная строка User-Agent
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: 'monospace',
+                        fontSize: '10px',
+                        color: '#9ca3af',
+                        wordBreak: 'break-all',
+                        background: 'rgba(0,0,0,0.4)',
+                        padding: '8px',
+                        borderRadius: '6px',
+                        maxHeight: '60px',
+                        overflowY: 'auto',
+                      }}
+                    >
+                      {telemetryProfile.last_user_agent || telemetryProfile.userAgent || 'User-Agent не зафиксирован'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div style={{ marginTop: '20px', textAlign: 'right' }}>
+              <button
+                type="button"
+                className={styles.cancelBtn}
+                onClick={() => setTelemetryProfile(null)}
               >
                 Закрыть
               </button>

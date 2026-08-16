@@ -11,6 +11,8 @@ import {
 } from '@/lib/bio-repository';
 import { getDatabase } from '@/lib/database';
 
+import { extractClientInfo } from '@/lib/telemetry';
+
 export async function POST(request) {
   try {
     const user = await getCurrentUser();
@@ -19,17 +21,19 @@ export async function POST(request) {
       return NextResponse.json({ ok: false, guest: true });
     }
 
+    const clientInfo = extractClientInfo(request);
+
     const db = getDatabase();
     const profRow = db
       .prepare('SELECT id FROM profiles WHERE user_id = ? OR (is_owner = 1 AND ? = 1)')
       .get(user.id, user.isAdmin ? 1 : 0);
 
     if (profRow) {
-      updateHeartbeat(profRow.id);
+      updateHeartbeat(profRow.id, clientInfo);
 
       const body = await request.json().catch(() => ({}));
       if (body.status) {
-        const allowed = ['online', 'inactive', 'dnd', 'invisible'];
+        const allowed = ['online', 'inactive', 'idle', 'dnd', 'invisible', 'offline'];
         if (allowed.includes(body.status)) {
           updateProfile(profRow.id, { status: body.status });
         }

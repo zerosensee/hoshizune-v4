@@ -209,6 +209,8 @@ body {
 /* Тело карточки */
 .card-body {
   padding: 24px 24px 20px;
+  overflow: visible;
+  position: relative;
 }
 
 /* ═══════════════════════════════════════════

@@ -53,7 +53,7 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
         minWidth: 0,
       }}
     >
-      {/* Горизонтальный скролл-контейнер видимых бейджей */}
+      {/* Флекс-контейнер видимых бейджей с поддержкой переноса */}
       <div
         ref={scrollRef}
         onWheel={handleWheel}
@@ -61,10 +61,7 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
           display: 'inline-flex',
           alignItems: 'center',
           gap: '4px',
-          overflowX: 'auto',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          whiteSpace: 'nowrap',
+          flexWrap: 'wrap',
           maxWidth: '100%',
           flexShrink: 1,
           minWidth: 0,
