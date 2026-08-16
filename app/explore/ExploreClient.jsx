@@ -411,7 +411,19 @@ export default function ExploreClient({
                 <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                   Номер в БД
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                    color: 'var(--text-primary)',
+                    fontFamily: 'var(--font-mono)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '120px',
+                  }}
+                  title={`#${myProfile.id}`}
+                >
                   #{myProfile.id}
                 </div>
               </div>
