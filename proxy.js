@@ -87,20 +87,54 @@ function isLocalIp(ip) {
   return false;
 }
 
-/**
- * Вайтлист разрешённых IP для доступа к админке.
- * При деплое на VPS — добавьте свой внешний IP.
- */
-const ALLOWED_IPS = ['127.0.0.1', '::1'];
+import fs from 'fs';
+import path from 'path';
 
 /**
- * Проверка IP на допустимость для доступа к админке.
+ * Чтение актуального конфига из admin-config.json для мгновенной проверки IP.
+ */
+function getAdminConfig() {
+  try {
+    const configPath = path.join(process.cwd(), 'admin-config.json');
+    if (fs.existsSync(configPath)) {
+      const data = fs.readFileSync(configPath, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch {}
+  return null;
+}
+
+/**
+ * Проверка IP на допустимость для доступа к сайту и панелям.
  * @param {string} ip - IP-адрес клиента
  * @returns {boolean} True если доступ разрешён
  */
 function isAdminIpAllowed(ip) {
-  // Отключено по требованию пользователя — сейчас IP проверка не требуется
-  return true;
+  const config = getAdminConfig();
+  const allowedIps = config?.allowedIps || ['*'];
+  const allowLocalNetwork = config?.allowLocalNetwork !== false;
+
+  // 1. Если в вайтлисте есть '*', доступ открыт для всех IP
+  if (allowedIps.includes('*')) {
+    return true;
+  }
+
+  // 2. Локальная сеть (127.0.0.1, ::1, 192.168.x.x, 10.x.x.x)
+  if (allowLocalNetwork && isLocalIp(ip)) {
+    return true;
+  }
+
+  // 3. Точная проверка IP-адреса по маске и значениям вайтлиста
+  const cleanClientIp = (ip || '').trim().toLowerCase();
+  return allowedIps.some((allowed) => {
+    const cleanAllowed = allowed.trim().toLowerCase();
+    if (cleanAllowed === cleanClientIp) return true;
+    if (cleanAllowed.endsWith('.*')) {
+      const prefix = cleanAllowed.slice(0, -1);
+      return cleanClientIp.startsWith(prefix);
+    }
+    return false;
+  });
 }
 
 /**
@@ -172,8 +206,8 @@ function build403Html() {
 <body>
   <div class="box">
     <div class="code">403</div>
-    <div class="msg">Доступ запрещён. Ваш IP не в списке разрешённых.</div>
-    <div class="prompt">$ access denied from unauthorized origin</div>
+    <div class="msg">Доступ запрещён. Ваш IP не находится в вайтлисте разрешённых адресов.</div>
+    <div class="prompt">$ access denied from unauthorized ip origin</div>
   </div>
 </body>
 </html>`;
@@ -188,10 +222,9 @@ const PUBLIC_ADMIN_PATHS = ['/admin/login', '/api/admin/auth'];
 /**
  * Основная функция proxy — точка входа Next.js 16.
  * Порядок проверок:
- * 1. Если не admin-маршрут — пропустить.
- * 2. Проверка IP — 403 если не в вайтлисте.
- * 3. Если публичный admin-маршрут (login) — пропустить.
- * 4. Проверка cookie-сессии — редирект на login если невалидна.
+ * 1. Проверка IP клиента по динамическому вайтлисту из admin-config.json.
+ * 2. Если IP запрещён — отдаём 403 Forbidden.
+ * 3. Если маршрут /admin/* — проверяем cookie-авторизацию.
  *
  * @param {import('next/server').NextRequest} request - Входящий запрос
  * @returns {NextResponse} Ответ или пропуск запроса дальше
@@ -199,16 +232,7 @@ const PUBLIC_ADMIN_PATHS = ['/admin/login', '/api/admin/auth'];
 export function proxy(request) {
   const { pathname } = request.nextUrl;
 
-  // Шаг 1: Проверяем только маршруты /admin/* и /api/admin/*
-  const isAdminRoute =
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/api/admin');
-
-  if (!isAdminRoute) {
-    return NextResponse.next();
-  }
-
-  // Шаг 2: IP-вайтлист
+  // Проверка IP для всех входящих публичных и административных страниц/API
   const clientIp = getClientIp(request);
 
   if (!isAdminIpAllowed(clientIp)) {
@@ -218,7 +242,16 @@ export function proxy(request) {
     });
   }
 
-  // Шаг 3: Публичные admin-маршруты не требуют cookie
+  // Шаг 2: Проверяем авторизацию только для маршрутов /admin/* и /api/admin/*
+  const isAdminRoute =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/api/admin');
+
+  if (!isAdminRoute) {
+    return NextResponse.next();
+  }
+
+  // Публичные admin-маршруты (логин) не требуют cookie
   const isPublicAdminPath = PUBLIC_ADMIN_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
@@ -227,7 +260,7 @@ export function proxy(request) {
     return NextResponse.next();
   }
 
-  // Шаг 4: Проверка cookie-сессии для защищённых маршрутов
+  // Проверка cookie-сессии для защищённых административных маршрутов
   const adminToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const userToken = request.cookies.get(USER_SESSION_COOKIE_NAME)?.value;
 
@@ -247,5 +280,7 @@ export function proxy(request) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };

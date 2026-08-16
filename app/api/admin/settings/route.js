@@ -56,10 +56,29 @@ export async function POST(request) {
 
     const updated = saveDbSettings(patch);
 
+    // Синхронизация с admin-config.json для мгновенного подхвата вайтлиста в proxy.js
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const configPath = path.join(process.cwd(), 'admin-config.json');
+      let currentConfig = {};
+      if (fs.existsSync(configPath)) {
+        currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      }
+      const newConfig = {
+        ...currentConfig,
+        allowedIps: updated.allowedIps || ['*'],
+        allowLocalNetwork: updated.allowLocalNetwork !== false,
+      };
+      fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2), 'utf8');
+    } catch (fsErr) {
+      console.error('[POST /api/admin/settings] Ошибка синхронизации admin-config.json:', fsErr);
+    }
+
     return NextResponse.json({
       success: true,
       settings: updated,
-      message: 'Настройки доступа и IP-вайтлиста успешно сохранены в БД!',
+      message: 'Настройки доступа и IP-вайтлиста успешно сохранены в БД и синхронизированы с proxy!',
     });
   } catch (error) {
     console.error('Ошибка при сохранении настроек:', error);
