@@ -1045,10 +1045,19 @@ body.no-animations *::after {
   overflow: visible;
   transition:
     border-color var(--transition-fast),
-    transform var(--transition-fast);
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
   transform: translateZ(0);
   will-change: transform;
-  animation: fadeIn 0.4s ease both;
+  animation: none;
+}
+
+.profile-card__name,
+.profile-card__bio,
+.profile-card__meta,
+.profile-card__slug {
+  animation: none !important;
+  transition: none !important;
 }
 
 .profile-card-link:hover .profile-card {
