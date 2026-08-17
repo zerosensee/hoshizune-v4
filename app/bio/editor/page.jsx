@@ -19,11 +19,46 @@ const PRESET_SERVICES = [
 ];
 
 /**
- * Автоматическое клиентское сжатие тяжелых файлов (например 90 МБ)
- * в сверхчеткий WebP (2048px) для мгновенной отправки без обрывов Nginx/Node.js
+ * Обнаружение анимированных файлов WebP (чанки ANIM/ANMF) и GIF
+ * для предотвращения потери кадров при отрисовке на HTML5 Canvas.
+ */
+async function isAnimatedWebpOrGif(file) {
+  if (!file) return false;
+  const name = (file.name || '').toLowerCase();
+  const type = (file.type || '').toLowerCase();
+
+  if (type === 'image/gif' || name.endsWith('.gif')) {
+    return true;
+  }
+
+  if (type.includes('webp') || name.endsWith('.webp')) {
+    try {
+      const buffer = await file.slice(0, 4096).arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      const text = String.fromCharCode(...bytes);
+      if (text.includes('ANIM') || text.includes('ANMF')) {
+        return true;
+      }
+    } catch {}
+  }
+  return false;
+}
+
+/**
+ * Автоматическое клиентское сжатие тяжелых статичных файлов
+ * с пропуском анимированных WebP/GIF для сохранения всех кадров анимации.
  */
 async function compressImageIfNeeded(file) {
-  if (!file || file.size <= 10 * 1024 * 1024) {
+  if (!file) return file;
+
+  // Если файл анимированный (GIF / Animated WebP) — отдаем оригинал без сжатия в Canvas
+  const isAnimated = await isAnimatedWebpOrGif(file);
+  if (isAnimated) {
+    console.log('[AvatarUpload] Обнаружен анимированный WebP/GIF! Сохраняем все кадры анимации без сжатия.');
+    return file;
+  }
+
+  if (file.size <= 10 * 1024 * 1024) {
     return file;
   }
 
