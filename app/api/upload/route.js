@@ -12,6 +12,51 @@ import { getDatabase } from '@/lib/database';
 
 export const maxDuration = 60; // Таймаут 60 сек для тяжелых файлов
 
+/**
+ * Резервный парсер multipart/form-data для случаев, когда встроенный request.formData()
+ * вышибает лимит встроенного парсера Node.js (undici).
+ */
+function extractFileFromMultipartBuffer(buffer, contentTypeHeader) {
+  const boundaryMatch = contentTypeHeader.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  if (!boundaryMatch) return null;
+  const boundaryStr = boundaryMatch[1] || boundaryMatch[2];
+  const boundary = Buffer.from(`--${boundaryStr.trim()}`);
+
+  let startIdx = buffer.indexOf(boundary);
+  if (startIdx === -1) return null;
+
+  const headerEnd = buffer.indexOf(Buffer.from('\r\n\r\n'), startIdx);
+  if (headerEnd === -1) return null;
+
+  const headerText = buffer.slice(startIdx, headerEnd).toString('utf-8');
+
+  const filenameMatch = headerText.match(/filename="([^"]+)"/i);
+  const fileName = filenameMatch ? filenameMatch[1] : 'avatar.webp';
+
+  const mimeMatch = headerText.match(/Content-Type:\s*([^\r\n]+)/i);
+  const fileType = mimeMatch ? mimeMatch[1].trim() : 'image/webp';
+
+  const fileDataStart = headerEnd + 4;
+
+  let fileDataEnd = buffer.indexOf(boundary, fileDataStart);
+  if (fileDataEnd === -1) {
+    fileDataEnd = buffer.length;
+  } else {
+    if (fileDataEnd >= 2 && buffer[fileDataEnd - 2] === 13 && buffer[fileDataEnd - 1] === 10) {
+      fileDataEnd -= 2;
+    }
+  }
+
+  const fileBuffer = buffer.slice(fileDataStart, fileDataEnd);
+
+  return {
+    name: fileName,
+    type: fileType,
+    size: fileBuffer.length,
+    buffer: fileBuffer,
+  };
+}
+
 export async function POST(request) {
   try {
     const user = await getCurrentUser();
@@ -44,22 +89,48 @@ export async function POST(request) {
       }
     }
 
-    let formData;
+    let fileBuffer = null;
+    let fileName = '';
+    let fileType = '';
+    let fileSize = 0;
+
+    // 1. Пробуем стандартный Web API request.formData()
     try {
-      formData = await request.formData();
+      const formData = await request.formData();
+      const fileObj = formData.get('avatar') || formData.get('file');
+
+      if (fileObj && fileObj instanceof File) {
+        fileName = fileObj.name || 'avatar.webp';
+        fileType = fileObj.type || 'image/webp';
+        fileSize = fileObj.size;
+        fileBuffer = Buffer.from(await fileObj.arrayBuffer());
+      }
     } catch (err) {
-      console.error('[Upload] Ошибка чтения formData:', err);
-      return NextResponse.json(
-        { error: 'Не удалось прочитать загружаемый файл. Проверьте размер файла.' },
-        { status: 400 }
-      );
+      console.warn('[Upload] request.formData() не сработал, переключаемся на сырой парсинг буфера:', err.message);
     }
 
-    const file = formData.get('avatar') || formData.get('file');
+    // 2. Резервный сырой парсинг, если request.formData() выбросил исключение лимита
+    if (!fileBuffer) {
+      try {
+        const contentType = request.headers.get('content-type') || '';
+        const rawArrayBuffer = await request.arrayBuffer();
+        const rawBuffer = Buffer.from(rawArrayBuffer);
+        const parsed = extractFileFromMultipartBuffer(rawBuffer, contentType);
 
-    if (!file || !(file instanceof File)) {
+        if (parsed && parsed.buffer && parsed.buffer.length > 0) {
+          fileName = parsed.name;
+          fileType = parsed.type;
+          fileSize = parsed.size;
+          fileBuffer = parsed.buffer;
+        }
+      } catch (rawErr) {
+        console.error('[Upload] Ошибка сырого чтения массива байт:', rawErr);
+      }
+    }
+
+    if (!fileBuffer || fileBuffer.length === 0) {
       return NextResponse.json(
-        { error: 'Файл не предоставлен' },
+        { error: 'Не удалось прочитать загружаемый файл. Проверьте размер файла.' },
         { status: 400 }
       );
     }
@@ -75,8 +146,8 @@ export async function POST(request) {
       'image/avif',
       'image/svg+xml',
     ];
-    const mime = (file.type || '').toLowerCase();
-    const rawExt = (file.name || '').split('.').pop() || 'webp';
+    const mime = (fileType || '').toLowerCase();
+    const rawExt = (fileName || '').split('.').pop() || 'webp';
     const ext = rawExt.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'webp';
 
     const isAllowedMime = allowedMimes.includes(mime) || mime.startsWith('image/');
@@ -106,11 +177,11 @@ export async function POST(request) {
     const hasBypass = user.isAdmin || user.isOwner || hasSub || restrictions.includes('bypass_avatar_limit');
     const maxSizeBytes = hasBypass ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
 
-    if (file.size > maxSizeBytes) {
+    if (fileSize > maxSizeBytes) {
       const limitMb = hasBypass ? '500 МБ' : '50 МБ';
       return NextResponse.json(
         {
-          error: `Размер файла (${(file.size / (1024 * 1024)).toFixed(1)} МБ) превышает лимит ${limitMb}!`,
+          error: `Размер файла (${(fileSize / (1024 * 1024)).toFixed(1)} МБ) превышает лимит ${limitMb}!`,
         },
         { status: 400 }
       );
@@ -122,9 +193,8 @@ export async function POST(request) {
 
     await mkdir(uploadDir, { recursive: true });
 
-    const buffer = Buffer.from(await file.arrayBuffer());
     const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, buffer);
+    await writeFile(filePath, fileBuffer);
 
     const avatarUrl = `/uploads/${filename}`;
 
