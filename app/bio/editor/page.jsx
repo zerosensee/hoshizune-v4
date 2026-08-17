@@ -16,6 +16,8 @@ const PRESET_SERVICES = [
   { id: 'spotify', label: 'Spotify', placeholder: 'https://open.spotify.com/user/...' },
   { id: 'telegram', label: 'Telegram', placeholder: 'https://t.me/yourusername' },
   { id: 'steam', label: 'Steam', placeholder: 'https://steamcommunity.com/id/...' },
+];
+
 /**
  * Автоматическое клиентское сжатие тяжелых файлов (например 90 МБ)
  * в сверхчеткий WebP (2048px) для мгновенной отправки без обрывов Nginx/Node.js
