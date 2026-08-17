@@ -16,7 +16,66 @@ const PRESET_SERVICES = [
   { id: 'spotify', label: 'Spotify', placeholder: 'https://open.spotify.com/user/...' },
   { id: 'telegram', label: 'Telegram', placeholder: 'https://t.me/yourusername' },
   { id: 'steam', label: 'Steam', placeholder: 'https://steamcommunity.com/id/...' },
-];
+/**
+ * Автоматическое клиентское сжатие тяжелых файлов (например 90 МБ)
+ * в сверхчеткий WebP (2048px) для мгновенной отправки без обрывов Nginx/Node.js
+ */
+async function compressImageIfNeeded(file) {
+  if (!file || file.size <= 10 * 1024 * 1024) {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      const MAX_DIM = 2048;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIM) / width);
+          width = MAX_DIM;
+        } else {
+          width = Math.round((width * MAX_DIM) / height);
+          height = MAX_DIM;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob && blob.size < file.size) {
+            const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), {
+              type: 'image/webp',
+            });
+            resolve(compressedFile);
+          } else {
+            resolve(file);
+          }
+        },
+        'image/webp',
+        0.92
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+
+    img.src = url;
+  });
+}
 
 function BioEditorInner() {
   const router = useRouter();
@@ -123,16 +182,19 @@ function BioEditorInner() {
   }, [editSlug, router]);
 
   async function handleAvatarUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
-    if (file.size > 500 * 1024 * 1024) {
+    if (rawFile.size > 500 * 1024 * 1024) {
       setError('Размер файла превышает 500 МБ!');
       return;
     }
 
     setUploading(true);
     setError('');
+
+    // Оптимизируем файл перед отправкой если он тяжелый
+    const file = await compressImageIfNeeded(rawFile);
 
     const reader = new FileReader();
     reader.onload = async (evt) => {
@@ -156,7 +218,7 @@ function BioEditorInner() {
         }
 
         // Если мультипарт не прошёл — отправляем резервный JSON Base64
-        if (!res.ok && base64Data) {
+        if (!res.ok && base64Data && file.size < 25 * 1024 * 1024) {
           console.warn('[AvatarUpload] Multipart не прошёл, прокручиваем фолбек через JSON Base64...');
           res = await fetch('/api/upload', {
             method: 'POST',
