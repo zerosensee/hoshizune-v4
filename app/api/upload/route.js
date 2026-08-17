@@ -94,25 +94,46 @@ export async function POST(request) {
     let fileType = '';
     let fileSize = 0;
 
-    // 1. Пробуем стандартный Web API request.formData()
-    try {
-      const formData = await request.formData();
-      const fileObj = formData.get('avatar') || formData.get('file');
+    const contentType = request.headers.get('content-type') || '';
 
-      if (fileObj && fileObj instanceof File) {
-        fileName = fileObj.name || 'avatar.webp';
-        fileType = fileObj.type || 'image/webp';
-        fileSize = fileObj.size;
-        fileBuffer = Buffer.from(await fileObj.arrayBuffer());
+    // 0. Если отправлен JSON с base64 (резервный надежный канал)
+    if (contentType.includes('application/json')) {
+      try {
+        const jsonBody = await request.json();
+        if (jsonBody.base64) {
+          const matches = jsonBody.base64.match(/^data:([a-zA-Z0-9\/+.-]+);base64,(.+)$/);
+          if (matches) {
+            fileType = matches[1];
+            fileBuffer = Buffer.from(matches[2], 'base64');
+            fileName = jsonBody.filename || 'avatar.webp';
+            fileSize = fileBuffer.length;
+          }
+        }
+      } catch (jsonErr) {
+        console.error('[Upload] Ошибка чтения JSON base64:', jsonErr);
       }
-    } catch (err) {
-      console.warn('[Upload] request.formData() не сработал, переключаемся на сырой парсинг буфера:', err.message);
     }
 
-    // 2. Резервный сырой парсинг, если request.formData() выбросил исключение лимита
+    // 1. Пробуем стандартный Web API request.formData()
     if (!fileBuffer) {
       try {
-        const contentType = request.headers.get('content-type') || '';
+        const formData = await request.formData();
+        const fileObj = formData.get('avatar') || formData.get('file');
+
+        if (fileObj && fileObj instanceof File) {
+          fileName = fileObj.name || 'avatar.webp';
+          fileType = fileObj.type || 'image/webp';
+          fileSize = fileObj.size;
+          fileBuffer = Buffer.from(await fileObj.arrayBuffer());
+        }
+      } catch (err) {
+        console.warn('[Upload] request.formData() не сработал, переключаемся на сырой парсинг буфера:', err.message);
+      }
+    }
+
+    // 2. Резервный сырой парсинг мультипарт буфера
+    if (!fileBuffer) {
+      try {
         const rawArrayBuffer = await request.arrayBuffer();
         const rawBuffer = Buffer.from(rawArrayBuffer);
         const parsed = extractFileFromMultipartBuffer(rawBuffer, contentType);

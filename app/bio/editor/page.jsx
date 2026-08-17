@@ -131,40 +131,69 @@ function BioEditorInner() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('avatar', file);
-
     setUploading(true);
     setError('');
-    try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
 
-      if (res.status === 413) {
-        setError('Ошибка 413 (Request Entity Too Large): Nginx сервера отклонил файл. Добавьте client_max_body_size 500M; в /etc/nginx/nginx.conf!');
-        return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      const base64Data = evt.target?.result;
+      if (base64Data) {
+        setAvatarPath(base64Data);
       }
 
-      let data;
       try {
-        data = await res.json();
-      } catch {
-        setError(`Ошибка ответа сервера (${res.status})`);
-        return;
-      }
+        const formData = new FormData();
+        formData.append('avatar', file);
 
-      if (!res.ok) {
-        setError(data.error || 'Ошибка загрузки аватара');
-      } else {
-        setAvatarPath(data.avatarPath);
+        let res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (res.status === 413) {
+          setError('Ошибка 413 (Request Entity Too Large): Nginx сервера отклонил файл. Добавьте client_max_body_size 500M; в /etc/nginx/nginx.conf!');
+          return;
+        }
+
+        // Если мультипарт не прошёл — отправляем резервный JSON Base64
+        if (!res.ok && base64Data) {
+          console.warn('[AvatarUpload] Multipart не прошёл, прокручиваем фолбек через JSON Base64...');
+          res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              filename: file.name,
+              base64: base64Data,
+            }),
+          });
+        }
+
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          setError(`Ошибка ответа сервера (${res.status})`);
+          return;
+        }
+
+        if (!res.ok) {
+          setError(data.error || 'Ошибка загрузки аватара');
+        } else if (data.avatarPath) {
+          setAvatarPath(data.avatarPath);
+        }
+      } catch {
+        setError('Ошибка сети при загрузке аватара');
+      } finally {
+        setUploading(false);
       }
-    } catch {
-      setError('Ошибка сети при загрузке аватара');
-    } finally {
+    };
+
+    reader.onerror = () => {
+      setError('Ошибка чтения локального файла');
       setUploading(false);
-    }
+    };
+
+    reader.readAsDataURL(file);
   }
 
   function handleAddLink() {
