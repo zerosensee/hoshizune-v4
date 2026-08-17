@@ -142,7 +142,19 @@ function BioEditorInner() {
         body: formData,
       });
 
-      const data = await res.json();
+      if (res.status === 413) {
+        setError('Ошибка 413 (Request Entity Too Large): Nginx сервера отклонил файл. Добавьте client_max_body_size 500M; в /etc/nginx/nginx.conf!');
+        return;
+      }
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        setError(`Ошибка ответа сервера (${res.status})`);
+        return;
+      }
+
       if (!res.ok) {
         setError(data.error || 'Ошибка загрузки аватара');
       } else {

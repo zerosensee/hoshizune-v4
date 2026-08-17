@@ -9,63 +9,6 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
   const scrollRef = useRef(null);
   const containerRef = useRef(null);
 
-  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    if (isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const dropdownWidth = 220;
-
-      let top = rect.bottom + 6;
-      let left = rect.left;
-
-      if (top + 200 > window.innerHeight) {
-        top = Math.max(10, rect.top - 210);
-      }
-
-      if (left + dropdownWidth > window.innerWidth - 10) {
-        left = Math.max(10, rect.right - dropdownWidth);
-      }
-
-      setDropdownPos({
-        top: Math.max(10, top),
-        left: Math.max(10, left),
-      });
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleScrollOrResize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const dropdownWidth = 220;
-
-        let top = rect.bottom + 6;
-        let left = rect.left;
-
-        if (top + 200 > window.innerHeight) {
-          top = Math.max(10, rect.top - 210);
-        }
-
-        if (left + dropdownWidth > window.innerWidth - 10) {
-          left = Math.max(10, rect.right - dropdownWidth);
-        }
-
-        setDropdownPos({
-          top: Math.max(10, top),
-          left: Math.max(10, left),
-        });
-      }
-    };
-    window.addEventListener('scroll', handleScrollOrResize, true);
-    window.addEventListener('resize', handleScrollOrResize);
-    return () => {
-      window.removeEventListener('scroll', handleScrollOrResize, true);
-      window.removeEventListener('resize', handleScrollOrResize);
-    };
-  }, [isOpen]);
-
   useEffect(() => {
     if (!isPinned) return;
 
@@ -219,9 +162,9 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
                 e.stopPropagation();
               }}
               style={{
-                position: 'fixed',
-                top: `${dropdownPos.top}px`,
-                left: `${dropdownPos.left}px`,
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                right: 0,
                 zIndex: 9999999,
                 background: 'var(--bg-card, rgba(13, 18, 16, 0.98))',
                 border: '1px solid var(--border-card, rgba(255, 255, 255, 0.25))',
