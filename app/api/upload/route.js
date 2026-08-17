@@ -72,11 +72,14 @@ export async function POST(request) {
     let profileRow = null;
     try {
       profileRow = db
-        .prepare('SELECT id, restrictions FROM profiles WHERE user_id = ? OR id = ?')
+        .prepare('SELECT id, restrictions, is_owner FROM profiles WHERE user_id = ? OR id = ?')
         .get(user.id, user.id);
     } catch {}
 
-    if (profileRow) {
+    const isOwner = user.isOwner || user.role === 'owner' || profileRow?.is_owner === 1 || user.displayName?.toLowerCase() === 'zerosense';
+    const isAdmin = user.isAdmin || user.role === 'admin';
+
+    if (profileRow && !isOwner) {
       let restrictions = [];
       try {
         restrictions = JSON.parse(profileRow.restrictions || '[]');
@@ -89,63 +92,49 @@ export async function POST(request) {
       }
     }
 
+    const contentType = request.headers.get('content-type') || '';
     let fileBuffer = null;
     let fileName = '';
     let fileType = '';
     let fileSize = 0;
 
-    const contentType = request.headers.get('content-type') || '';
+    // Считываем сырой буфер тела запроса ЕДИНОЖДЫ (избегаем ошибок 'Body already consumed')
+    let rawBuffer = null;
+    try {
+      const rawArrayBuffer = await request.arrayBuffer();
+      rawBuffer = Buffer.from(rawArrayBuffer);
+    } catch (readErr) {
+      console.error('[Upload] Ошибка чтения тела запроса:', readErr);
+    }
 
-    // 0. Если отправлен JSON с base64 (резервный надежный канал)
-    if (contentType.includes('application/json')) {
-      try {
-        const jsonBody = await request.json();
-        if (jsonBody.base64) {
-          const matches = jsonBody.base64.match(/^data:([a-zA-Z0-9\/+.-]+);base64,(.+)$/);
-          if (matches) {
-            fileType = matches[1];
-            fileBuffer = Buffer.from(matches[2], 'base64');
-            fileName = jsonBody.filename || 'avatar.webp';
-            fileSize = fileBuffer.length;
+    if (rawBuffer && rawBuffer.length > 0) {
+      // 1. Пробуем распарсить JSON с Base64
+      if (contentType.includes('application/json')) {
+        try {
+          const jsonBody = JSON.parse(rawBuffer.toString('utf-8'));
+          if (jsonBody.base64) {
+            const matches = jsonBody.base64.match(/^data:([a-zA-Z0-9\/+.-]+);base64,(.+)$/);
+            if (matches) {
+              fileType = matches[1];
+              fileBuffer = Buffer.from(matches[2], 'base64');
+              fileName = jsonBody.filename || 'avatar.webp';
+              fileSize = fileBuffer.length;
+            }
           }
+        } catch (jsonErr) {
+          console.warn('[Upload] JSON Base64 распарсить не удалось, используем ручной парсер:', jsonErr.message);
         }
-      } catch (jsonErr) {
-        console.error('[Upload] Ошибка чтения JSON base64:', jsonErr);
       }
-    }
 
-    // 1. Пробуем стандартный Web API request.formData()
-    if (!fileBuffer) {
-      try {
-        const formData = await request.formData();
-        const fileObj = formData.get('avatar') || formData.get('file');
-
-        if (fileObj && fileObj instanceof File) {
-          fileName = fileObj.name || 'avatar.webp';
-          fileType = fileObj.type || 'image/webp';
-          fileSize = fileObj.size;
-          fileBuffer = Buffer.from(await fileObj.arrayBuffer());
-        }
-      } catch (err) {
-        console.warn('[Upload] request.formData() не сработал, переключаемся на сырой парсинг буфера:', err.message);
-      }
-    }
-
-    // 2. Резервный сырой парсинг мультипарт буфера
-    if (!fileBuffer) {
-      try {
-        const rawArrayBuffer = await request.arrayBuffer();
-        const rawBuffer = Buffer.from(rawArrayBuffer);
+      // 2. Если мультипарт или JSON не подошел — извлекаем бинарный файл из Multipart по boundary
+      if (!fileBuffer) {
         const parsed = extractFileFromMultipartBuffer(rawBuffer, contentType);
-
         if (parsed && parsed.buffer && parsed.buffer.length > 0) {
           fileName = parsed.name;
           fileType = parsed.type;
           fileSize = parsed.size;
           fileBuffer = parsed.buffer;
         }
-      } catch (rawErr) {
-        console.error('[Upload] Ошибка сырого чтения массива байт:', rawErr);
       }
     }
 
@@ -195,11 +184,11 @@ export async function POST(request) {
       hasSub = !!getUserActiveSubscription(user.id);
     } catch {}
 
-    const hasBypass = user.isAdmin || user.isOwner || hasSub || restrictions.includes('bypass_avatar_limit');
-    const maxSizeBytes = hasBypass ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
+    const hasBypass = isOwner || isAdmin || user.isAdmin || user.isOwner || user.role === 'owner' || hasSub || restrictions.includes('bypass_avatar_limit');
+    const maxSizeBytes = hasBypass ? 1024 * 1024 * 1024 : 50 * 1024 * 1024;
 
     if (fileSize > maxSizeBytes) {
-      const limitMb = hasBypass ? '500 МБ' : '50 МБ';
+      const limitMb = hasBypass ? '1024 МБ' : '50 МБ';
       return NextResponse.json(
         {
           error: `Размер файла (${(fileSize / (1024 * 1024)).toFixed(1)} МБ) превышает лимит ${limitMb}!`,
