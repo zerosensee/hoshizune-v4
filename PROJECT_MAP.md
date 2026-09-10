@@ -72,12 +72,7 @@ git push origin main
 git push backup main
 ```
 
-### На сервере (VPS) — если уже находитесь в папке репозитория:
-```bash
-git pull && node scripts/security-cleanup.js && npm run build && pm2 restart hoshizune-dev
-```
-
-По шагам:
+### На сервере (VPS) — строго по очереди (без объединения в одну строку и без cd):
 ```bash
 git pull
 node scripts/security-cleanup.js
