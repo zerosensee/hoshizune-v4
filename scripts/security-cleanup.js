@@ -7,6 +7,24 @@ import path from 'path';
 import crypto from 'crypto';
 import { getDatabase } from '../lib/database.js';
 
+function purgeUserAndProfile(db, targetUserId, profileId) {
+  if (targetUserId) {
+    db.prepare('DELETE FROM users WHERE id = ?').run(targetUserId);
+    db.prepare('DELETE FROM user_emails WHERE user_id = ?').run(targetUserId);
+    db.prepare('DELETE FROM user_sessions WHERE user_id = ?').run(targetUserId);
+    db.prepare('DELETE FROM subscriptions WHERE user_id = ?').run(targetUserId);
+    db.prepare('DELETE FROM short_links WHERE created_by = ?').run(targetUserId);
+    db.prepare('DELETE FROM user_bans WHERE user_id = ?').run(targetUserId);
+    db.prepare('DELETE FROM staff_members WHERE user_id = ?').run(targetUserId);
+    db.prepare('DELETE FROM comments WHERE author_id = ?').run(targetUserId);
+  }
+  if (profileId) {
+    db.prepare('DELETE FROM profiles WHERE id = ?').run(profileId);
+    db.prepare('DELETE FROM comments WHERE profile_id = ?').run(profileId);
+    db.prepare('DELETE FROM page_views WHERE profile_id = ?').run(profileId);
+  }
+}
+
 export function runSecurityCleanup() {
   const db = getDatabase();
   console.log('[Security Cleanup] Запуск очистки артефактов тестирования...');
@@ -46,26 +64,24 @@ export function runSecurityCleanup() {
 
       if (userEmailRow) {
         const uid = userEmailRow.user_id;
-        db.prepare('DELETE FROM profiles WHERE user_id = ? OR id = ?').run(uid, uid);
-        db.prepare('DELETE FROM user_emails WHERE user_id = ?').run(uid);
-        db.prepare('DELETE FROM subscriptions WHERE user_id = ?').run(uid);
-        db.prepare('DELETE FROM short_links WHERE created_by = ?').run(uid);
-        db.prepare('DELETE FROM users WHERE id = ?').run(uid);
+        purgeUserAndProfile(db, uid, uid);
         report.deletedAccounts++;
         console.log(`✓ Удален тестовый аккаунт: ${email} (ID: ${uid})`);
       }
     }
 
-    // Также удаляем по slug профиля
+    // Также удаляем по slug профиля и display_name пользователей
     const testSlugs = ['hoshizune_6f06', 'xss', 'matst'];
     for (const slug of testSlugs) {
-      const p = db.prepare('SELECT id, user_id FROM profiles WHERE slug = ?').get(slug);
+      const p = db.prepare('SELECT id, user_id FROM profiles WHERE LOWER(slug) = ?').get(slug.toLowerCase());
       if (p) {
-        db.prepare('DELETE FROM profiles WHERE id = ?').run(p.id);
-        if (p.user_id) {
-          db.prepare('DELETE FROM users WHERE id = ?').run(p.user_id);
-          db.prepare('DELETE FROM user_emails WHERE user_id = ?').run(p.user_id);
-        }
+        purgeUserAndProfile(db, p.user_id, p.id);
+        report.deletedAccounts++;
+      }
+
+      const uRows = db.prepare('SELECT id FROM users WHERE LOWER(display_name) = ?').all(slug.toLowerCase());
+      for (const u of uRows) {
+        purgeUserAndProfile(db, u.id, u.id);
         report.deletedAccounts++;
       }
     }

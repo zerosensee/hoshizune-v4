@@ -902,14 +902,12 @@ export default function ProfilesClient({ initialProfiles = [], currentUser }) {
                 <button
                   type="button"
                   onClick={() => setShowRolesDrawer(true)}
-                  disabled={!isOwnerUser}
                   className={styles.submitBtn}
                   style={{
                     width: '100%',
                     justify: 'space-between',
                     padding: '10px 14px',
-                    cursor: isOwnerUser ? 'pointer' : 'not-allowed',
-                    opacity: isOwnerUser ? 1 : 0.6,
+                    cursor: 'pointer',
                     background: 'var(--bg-card, rgba(0,0,0,0.4))',
                   }}
                 >
@@ -933,12 +931,6 @@ export default function ProfilesClient({ initialProfiles = [], currentUser }) {
                     Выбрать в меню справа ➔
                   </span>
                 </button>
-
-                {!isOwnerUser && (
-                  <div style={{ fontSize: '11px', color: '#f87171', marginTop: 6 }}>
-                    🔒 Изменять роли и настраивать титулы может исключительно Владелец (Owner)
-                  </div>
-                )}
               </div>
             </div>
 

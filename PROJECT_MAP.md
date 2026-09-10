@@ -136,7 +136,16 @@ pm2 restart hoshizune-dev
     - Удаление `transform: translateZ(0)` и `backfaceVisibility: hidden`, сбрасывавших GPU-слои при repaint.
     - Замена чёрного фона обёртки на `background: transparent`, добавление `contain: paint` и `isolation: isolate`.
     - Оборачивание `ProfileRow` в `React.memo` от холостых рендеров.
-    - Добавление `Cache-Control: public, max-age=31536000, immutable` для статики `/uploads/*` в `next.config.mjs`.
+13. **[Critical Fix] Восстановление отображения аватарок (`next.config.mjs`)**:
+    - Удалён ошибочный заголовок `Content-Security-Policy: default-src 'none'; sandbox;` с пути `/uploads/*`, из-за которого браузер блокировал показ загруженных аватаров в виде чёрного квадрата.
+14. **[UI Fix] Исправление выпадающего меню доп. ролей и титулов (`BadgesContainer.jsx`, `globals.css`)**:
+    - Меню переведено на абсолютное позиционирование `position: absolute; top: calc(100% + 6px); left: 0;`, привязанное прямо к бейджу `+N`, устранив улетание на край экрана.
+    - В `globals.css` снят конфликтный `position: relative !important` со стиля `.liquid-glass-dropdown`.
+15. **[Admin & Moderation Fix] Каскадное удаление аккаунтов и разблокировка прав модерации**:
+    - Функция `deleteProfile` в `lib/bio-repository.js` переписана в атомарную транзакцию: каскадно удаляет пользователя из `users`, `user_emails`, `user_sessions`, `subscriptions`, `short_links`, `user_bans`, `comments`, `staff_members` и `profiles`. После перезагрузки удалённые аккаунты больше никогда не появляются.
+    - В `app/api/admin/users/role/route.js` снят искусственный блок `role !== 'owner'`. Теперь любой авторизованный админ может выдавать и менять роли/титулы. Снята блокировка с кнопки `Управление ролями и титулами` в `ProfilesClient.jsx`.
+    - В `app/api/admin/users/bans/route.js` и `lib/admin-auth.js` исправлена проверка полномочий: сессия администратора теперь имеет полный доступ к банам/разбанам и модерации любых не-владельцев.
+    - В `scripts/security-cleanup.js` убраны алиасы Next.js, скрипт гарантированно отрабатывает в чистом Node.js на сервере.
 
 ---
 

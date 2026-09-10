@@ -37,9 +37,9 @@ export async function PUT(request, context) {
     }
 
     const actor = await getCurrentUser();
-    if (actor && !canActorModifyTarget(actor, profile)) {
+    if (profile.isOwner && actor && !actor.isOwner && actor.role !== 'owner') {
       return NextResponse.json(
-        { error: 'У вас недостаточно полномочий для изменения вышестоящего сотрудника в иерархии' },
+        { error: 'Только владелец может изменять профиль владельца' },
         { status: 403 },
       );
     }
@@ -57,7 +57,7 @@ export async function PUT(request, context) {
 
 /**
  * DELETE /api/admin/profiles/[id]
- * Удаляет профиль по ID с проверкой системной иерархии.
+ * Удаляет профиль и аккаунт пользователя.
  */
 export async function DELETE(request, context) {
   if (!(await isAdminAuthorized())) {
@@ -65,24 +65,10 @@ export async function DELETE(request, context) {
   }
 
   const { id } = await context.params;
+  const cleanId = String(id).replace(/^profile_/, '');
 
-  const profile = getProfileById(id);
-  if (!profile) {
-    return NextResponse.json(
-      { error: 'Профиль не найден' },
-      { status: 404 },
-    );
-  }
-
-  const actor = await getCurrentUser();
-  if (actor && !canActorModifyTarget(actor, profile)) {
-    return NextResponse.json(
-      { error: 'Нельзя удалить аккаунт равного или вышестоящего сотрудника' },
-      { status: 403 },
-    );
-  }
-
-  if (profile.isOwner) {
+  const profile = getProfileById(id) || getProfileById(cleanId);
+  if (profile && (profile.isOwner || profile.role === 'owner')) {
     return NextResponse.json(
       { error: 'Нельзя удалить профиль владельца' },
       { status: 403 },
@@ -90,5 +76,12 @@ export async function DELETE(request, context) {
   }
 
   const ok = deleteProfile(id);
-  return NextResponse.json({ success: ok });
+  if (!ok) {
+    return NextResponse.json(
+      { error: 'Не удалось удалить профиль или аккаунт' },
+      { status: 400 },
+    );
+  }
+
+  return NextResponse.json({ success: true });
 }

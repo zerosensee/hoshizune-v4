@@ -1354,7 +1354,6 @@ html[data-liquid="true"] [class*="formBox"] {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
 }
 html[data-liquid="true"] .glass-select-trigger,
-html[data-liquid="true"] .liquid-glass-dropdown,
 html[data-liquid="true"] .modal-btn,
 html[data-liquid="true"] .btn,
 html[data-liquid="true"] .create-bio-btn,

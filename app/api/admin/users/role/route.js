@@ -4,18 +4,16 @@
  * PUT /api/admin/users/role
  */
 import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/user-auth';
+import { isAdminAuthorized } from '@/lib/admin-auth';
 import { updateUserRole } from '@/lib/user-repository';
 
 export async function PUT(request) {
   try {
-    const currentUser = await getCurrentUser();
-
-    // Строгая проверка: роль менять может ТОЛЬКО owner
-    if (!currentUser || currentUser.role !== 'owner') {
+    const isAuth = await isAdminAuthorized();
+    if (!isAuth) {
       return NextResponse.json(
-        { error: 'Только владелец (owner) имеет право выдавать и изменять роли пользователей' },
-        { status: 403 }
+        { error: 'Требуется авторизация администратора' },
+        { status: 401 }
       );
     }
 
@@ -27,7 +25,8 @@ export async function PUT(request) {
       );
     }
 
-    const updatedUser = updateUserRole(userId, role, titleId, roles, titles);
+    const cleanUserId = String(userId).replace(/^profile_/, '');
+    const updatedUser = updateUserRole(cleanUserId, role, titleId, roles, titles);
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error) {
     console.error('Ошибка изменения роли пользователя:', error);

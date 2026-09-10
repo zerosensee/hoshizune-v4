@@ -39,24 +39,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Укажите ID пользователя или IP-адрес' }, { status: 400 });
     }
 
-    if (userId) {
+    const cleanUserId = userId ? String(userId).replace(/^profile_/, '') : null;
+
+    if (cleanUserId) {
       const { getProfileById } = await import('@/lib/bio-repository');
-      const { getCurrentUser } = await import('@/lib/user-auth');
-      const { canActorModifyTarget } = await import('@/lib/admin-auth');
+      const target = getProfileById(cleanUserId) || getProfileById(userId);
 
-      const target = getProfileById(userId);
-      const actor = await getCurrentUser();
-
-      if (target && actor && !canActorModifyTarget(actor, target)) {
+      if (target && (target.isOwner || target.role === 'owner')) {
         return NextResponse.json(
-          { error: 'Вы не можете заблокировать равного или вышестоящего сотрудника в иерархии' },
+          { error: 'Нельзя заблокировать владельца сайта' },
           { status: 403 }
         );
       }
     }
 
     const banId = createBan({
-      userId,
+      userId: cleanUserId,
       ipAddress,
       banType: banType || 'account',
       reason: reason || 'Нарушение правил',
@@ -81,9 +79,10 @@ export async function DELETE(request) {
     const { searchParams } = new URL(request.url);
     const banId = searchParams.get('id');
     const userId = searchParams.get('userId');
+    const cleanUserId = userId ? String(userId).replace(/^profile_/, '') : null;
 
-    if (userId) {
-      removeUserBans(userId);
+    if (cleanUserId) {
+      removeUserBans(cleanUserId);
       return NextResponse.json({ ok: true, message: 'Все блокировки пользователя успешно сняты (Разбан)' });
     }
 

@@ -5,47 +5,11 @@ import { useState, useRef, useEffect } from 'react';
 export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'normal' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
-  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const scrollRef = useRef(null);
   const containerRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen) return;
-
-    const updatePos = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const dropdownWidth = 220;
-      const dropdownEstimatedHeight = 180;
-
-      let top = rect.bottom + 6;
-      let left = rect.left;
-
-      if (top + dropdownEstimatedHeight > window.innerHeight) {
-        top = Math.max(10, rect.top - dropdownEstimatedHeight - 6);
-      }
-
-      if (left + dropdownWidth > window.innerWidth - 10) {
-        left = Math.max(10, rect.right - dropdownWidth);
-      }
-
-      setDropdownPos({
-        top: Math.max(10, top),
-        left: Math.max(10, left),
-      });
-    };
-
-    updatePos();
-    window.addEventListener('scroll', updatePos, true);
-    window.addEventListener('resize', updatePos);
-    return () => {
-      window.removeEventListener('scroll', updatePos, true);
-      window.removeEventListener('resize', updatePos);
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isPinned) return;
 
     function handleClickOutside(event) {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
@@ -58,7 +22,7 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isPinned]);
+  }, [isOpen]);
 
   if (!Array.isArray(badges) || badges.length === 0) {
     return null;
@@ -197,10 +161,10 @@ export default function BadgesContainer({ badges = [], maxVisible = 2, size = 'n
                 e.stopPropagation();
               }}
               style={{
-                position: 'fixed',
-                top: `${dropdownPos.top}px`,
-                left: `${dropdownPos.left}px`,
-                zIndex: 9999999,
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                left: 0,
+                zIndex: 999999,
                 background: 'var(--bg-card, rgba(13, 18, 16, 0.98))',
                 border: '1px solid var(--border-card, rgba(255, 255, 255, 0.25))',
                 borderRadius: '8px',
