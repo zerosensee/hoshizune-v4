@@ -66,8 +66,14 @@ export default function DebugPanel() {
     // 3. Перехват сетевых запросов fetch
     const origFetch = window.fetch;
     window.fetch = async (...args) => {
-      const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
-      const method = args[1]?.method || 'GET';
+      const rawUrl = args[0];
+      let url = '';
+      if (typeof rawUrl === 'string') {
+        url = rawUrl;
+      } else if (rawUrl && typeof rawUrl === 'object') {
+        url = rawUrl.url || rawUrl.href || rawUrl.pathname || String(rawUrl);
+      }
+      const method = (args[1]?.method || (rawUrl && typeof rawUrl === 'object' && rawUrl.method) || 'GET').toUpperCase();
       const startTime = Date.now();
 
       // Не спамим логами самого дебагера
