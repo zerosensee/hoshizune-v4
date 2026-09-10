@@ -21,18 +21,18 @@ export default function SubscriptionClient({ currentUser, initialSubscription })
     setTimeout(() => setToast(null), 4000);
   };
 
-  const handleActivate = async (planName, durationDays) => {
+  const handleActivate = async (planId) => {
     if (!currentUser) {
       showToast('Сначала войдите в аккаунт!', true);
       return;
     }
 
-    setLoadingPlan(planName);
+    setLoadingPlan(planId);
     try {
       const res = await fetch('/api/subscription/activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planName, durationDays }),
+        body: JSON.stringify({ planId }),
       });
 
       const data = await res.json();
@@ -207,8 +207,8 @@ export default function SubscriptionClient({ currentUser, initialSubscription })
 
           <button
             type="button"
-            onClick={() => handleActivate('Hoshizune VIP', 30)}
-            disabled={loadingPlan === 'Hoshizune VIP'}
+            onClick={() => handleActivate('vip_start')}
+            disabled={loadingPlan === 'vip_start'}
             style={{
               marginTop: '28px',
               width: '100%',
@@ -223,7 +223,7 @@ export default function SubscriptionClient({ currentUser, initialSubscription })
               transition: 'all 0.2s ease',
             }}
           >
-            {loadingPlan === 'Hoshizune VIP' ? 'Оформление...' : 'Оформить на 30 дней'}
+            {loadingPlan === 'vip_start' ? 'Оформление...' : 'Оформить на 30 дней'}
           </button>
         </div>
 
@@ -288,8 +288,8 @@ export default function SubscriptionClient({ currentUser, initialSubscription })
 
           <button
             type="button"
-            onClick={() => handleActivate('VIP PRO', 90)}
-            disabled={loadingPlan === 'VIP PRO'}
+            onClick={() => handleActivate('vip_pro')}
+            disabled={loadingPlan === 'vip_pro'}
             style={{
               marginTop: '28px',
               width: '100%',
@@ -305,7 +305,7 @@ export default function SubscriptionClient({ currentUser, initialSubscription })
               transition: 'all 0.2s ease',
             }}
           >
-            {loadingPlan === 'VIP PRO' ? 'Оформление...' : 'Оформить VIP PRO'}
+            {loadingPlan === 'vip_pro' ? 'Оформление...' : 'Оформить VIP PRO'}
           </button>
         </div>
 
@@ -327,7 +327,7 @@ export default function SubscriptionClient({ currentUser, initialSubscription })
               Founder Lifetime
             </div>
             <div style={{ fontSize: '28px', fontWeight: '900', margin: '12px 0 6px 0', color: '#ffffff' }}>
-              1490 ₽ <span style={{ fontSize: '13px', color: '#a3a3a3', fontWeight: 'normal' }}>навстагла</span>
+              1490 ₽ <span style={{ fontSize: '13px', color: '#a3a3a3', fontWeight: 'normal' }}>навсегда</span>
             </div>
             <div style={{ fontSize: '12px', color: '#a3a3a3', marginBottom: '20px' }}>
               Вечный доступ ко всем будущим функциям сайта
@@ -348,8 +348,8 @@ export default function SubscriptionClient({ currentUser, initialSubscription })
 
           <button
             type="button"
-            onClick={() => handleActivate('Founder Lifetime', 3650)}
-            disabled={loadingPlan === 'Founder Lifetime'}
+            onClick={() => handleActivate('vip_lifetime')}
+            disabled={loadingPlan === 'vip_lifetime'}
             style={{
               marginTop: '28px',
               width: '100%',

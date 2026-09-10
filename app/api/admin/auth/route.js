@@ -1,6 +1,6 @@
 /**
  * API аутентификации в админку.
- * POST /api/admin/auth — строгое совпадение пароля администратора.
+ * POST   /api/admin/auth — строгое совпадение пароля администратора с троттлингом и блокировкой.
  * DELETE /api/admin/auth — выход (удаление cookie).
  */
 import { NextResponse } from 'next/server';
@@ -12,6 +12,7 @@ import {
 } from '@/lib/admin-auth';
 import { getDatabase } from '@/lib/database';
 import { verifyPassword } from '@/lib/user-repository';
+import { checkRateLimit, resetRateLimit, getClientIp } from '@/lib/rate-limiter';
 
 /**
  * Динамическое чтение конфигурации admin-config.json в обход кэша сборки.
@@ -32,13 +33,32 @@ function getAdminConfig() {
  */
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const clientIp = getClientIp(request);
+    const rlKey = `admin_auth:${clientIp}`;
+
+    // Rate Limiting: максимум 5 попыток за 15 минут, затем блокировка на 15 минут
+    const limit = checkRateLimit(rlKey, {
+      maxAttempts: 5,
+      windowMs: 15 * 60 * 1000,
+      lockoutMs: 15 * 60 * 1000,
+    });
+
+    if (!limit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Вход заблокирован из-за серии неудачных попыток. Попробуйте через ${Math.ceil(limit.retryAfterSeconds / 60)} мин.`,
+        },
+        { status: 429 }
+      );
+    }
+
+    const body = await request.json().catch(() => ({}));
     const { password } = body;
 
     if (!password || typeof password !== 'string') {
       return NextResponse.json(
         { error: 'Пароль обязателен' },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -70,12 +90,19 @@ export async function POST(request) {
     }
 
     if (!isValid) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // Искусственная задержка для защиты от тайминг-атак
+      await new Promise((resolve) => setTimeout(resolve, 500));
       return NextResponse.json(
-        { error: 'Неверный пароль администратора' },
-        { status: 401 },
+        {
+          error: 'Неверный пароль администратора',
+          attemptsRemaining: limit.remaining,
+        },
+        { status: 401 }
       );
     }
+
+    // Успешный вход — сброс счетчика неудачных попыток
+    resetRateLimit(rlKey);
 
     const maxAge = config.sessionMaxAge || 86400;
     const token = createSessionToken();
@@ -94,7 +121,7 @@ export async function POST(request) {
     console.error('Ошибка входа в админку:', error);
     return NextResponse.json(
       { error: 'Внутренняя ошибка сервера' },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

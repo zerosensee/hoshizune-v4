@@ -57,6 +57,68 @@ function extractFileFromMultipartBuffer(buffer, contentTypeHeader) {
   };
 }
 
+/**
+ * Определение реального формата файла по бинарной сигнатуре (Magic Bytes).
+ * @param {Buffer} buffer
+ * @returns {'jpg'|'png'|'gif'|'webp'|'avif'|null}
+ */
+function detectImageFormat(buffer) {
+  if (!buffer || buffer.length < 12) return null;
+
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return 'jpg';
+  }
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return 'png';
+  }
+
+  // GIF: GIF87a or GIF89a
+  if (
+    buffer[0] === 0x47 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x38 &&
+    (buffer[4] === 0x37 || buffer[4] === 0x39) &&
+    buffer[5] === 0x61
+  ) {
+    return 'gif';
+  }
+
+  // WEBP: RIFF....WEBP
+  if (
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
+  ) {
+    return 'webp';
+  }
+
+  // AVIF: ....ftypavif / ftypavis / ftypmif1
+  const ftyp = buffer.slice(4, 12).toString('ascii');
+  if (ftyp.includes('avif') || ftyp.includes('avis') || ftyp.includes('mif1')) {
+    return 'avif';
+  }
+
+  return null;
+}
+
 export async function POST(request) {
   try {
     const user = await getCurrentUser();
@@ -145,30 +207,32 @@ export async function POST(request) {
       );
     }
 
-    /* Проверка формата файла (MIME и Расширение) */
-    const allowedMimes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/x-webp',
-      'image/avif',
-      'image/svg+xml',
-    ];
-    const mime = (fileType || '').toLowerCase();
-    const rawExt = (fileName || '').split('.').pop() || 'webp';
-    const ext = rawExt.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'webp';
-
-    const isAllowedMime = allowedMimes.includes(mime) || mime.startsWith('image/');
-    const isAllowedExt = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg'].includes(ext);
-
-    if (!isAllowedMime && !isAllowedExt) {
+    /* 1. Жесткая проверка на наличие SVG, XML и внедренных скриптов */
+    const first1024 = fileBuffer.slice(0, 1024).toString('utf-8', 0, Math.min(1024, fileBuffer.length)).toLowerCase();
+    if (
+      first1024.includes('<svg') ||
+      first1024.includes('<?xml') ||
+      first1024.includes('<script') ||
+      first1024.includes('xmlns') ||
+      first1024.includes('javascript:')
+    ) {
       return NextResponse.json(
-        { error: 'Неподдерживаемый формат! Допустимы только изображения: JPG, PNG, GIF, WebP, AVIF' },
+        { error: 'Загрузка векторных SVG и файлов с внедренной разметкой/скриптами строго запрещена в целях безопасности!' },
         { status: 400 }
       );
     }
+
+    /* 2. Проверка бинарной сигнатуры (Magic Bytes) */
+    const detectedFormat = detectImageFormat(fileBuffer);
+    if (!detectedFormat) {
+      return NextResponse.json(
+        { error: 'Неподдерживаемый или повреждённый формат файла! Разрешены только растровые изображения: JPG, PNG, GIF, WebP, AVIF' },
+        { status: 400 }
+      );
+    }
+
+    // Расширение определяется исключительно валидированным бинарным содержимым
+    const ext = detectedFormat;
 
     /* Определение допустимого размера */
     let restrictions = [];

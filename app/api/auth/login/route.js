@@ -1,5 +1,5 @@
 /**
- * API: Вход пользователя с проверкой статуса подтверждения почты.
+ * API: Вход пользователя с проверкой статуса подтверждения почты и защитой от брутфорса.
  * POST /api/auth/login — { email, password }
  */
 import { NextResponse } from 'next/server';
@@ -7,10 +7,12 @@ import { getUserByEmail, verifyPassword } from '@/lib/user-repository';
 import { setUserSessionCookie } from '@/lib/user-auth';
 import { createEmailVerificationCode } from '@/lib/email-service';
 import { getDatabase } from '@/lib/database';
+import { checkRateLimit, resetRateLimit, getClientIp } from '@/lib/rate-limiter';
 
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const clientIp = getClientIp(request);
+    const body = await request.json().catch(() => ({}));
     const { email, password } = body;
 
     if (!email || !password) {
@@ -20,8 +22,26 @@ export async function POST(request) {
       );
     }
 
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    // Rate Limiting: максимум 5 попыток за 5 минут на IP + email, затем блокировка на 10 минут
+    const rlKey = `login:${clientIp}:${normalizedEmail}`;
+    const limit = checkRateLimit(rlKey, {
+      maxAttempts: 5,
+      windowMs: 5 * 60 * 1000,
+      lockoutMs: 10 * 60 * 1000,
+    });
+
+    if (!limit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Слишком много неудачных попыток входа. Доступ заблокирован на ${Math.ceil(limit.retryAfterSeconds / 60)} мин.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const db = getDatabase();
-    const normalizedEmail = email.trim().toLowerCase();
 
     // Запрашиваем данные пользователя по почте
     const row = db
@@ -33,7 +53,9 @@ export async function POST(request) {
       `)
       .get(normalizedEmail);
 
+    // Защита от timing-атак
     if (!row) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
       return NextResponse.json(
         { error: 'Неверный email или пароль' },
         { status: 401 }
@@ -42,16 +64,29 @@ export async function POST(request) {
 
     const isValid = verifyPassword(password, row.password_hash);
     if (!isValid) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
       return NextResponse.json(
         { error: 'Неверный email или пароль' },
         { status: 401 }
       );
     }
 
-    // Автоматическая подтяжка верификации если она не стояла
+    // Проверка статуса подтверждения почты
     if (!row.is_verified) {
-      db.prepare('UPDATE users SET is_verified = 1 WHERE id = ?').run(row.id);
+      // Отправляем код подтверждения, если почта ещё не верифицирована
+      createEmailVerificationCode(normalizedEmail);
+      return NextResponse.json(
+        {
+          error: 'Ваш email ещё не подтверждён. Мы отправили новый 6-значный код на вашу почту.',
+          requiresVerification: true,
+          email: normalizedEmail,
+        },
+        { status: 403 }
+      );
     }
+
+    // Сброс счетчика неудачных попыток при успешном входе
+    resetRateLimit(rlKey);
 
     // Установка сессии при успешном входе
     await setUserSessionCookie(row.id);
@@ -75,7 +110,7 @@ export async function POST(request) {
       }
     }
 
-    const user = getUserByEmail(email);
+    const user = getUserByEmail(normalizedEmail);
 
     return NextResponse.json({
       success: true,

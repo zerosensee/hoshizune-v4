@@ -54,15 +54,35 @@ export default function ProfileRow({
     }
   }
 
+  const avatarSrc = avatarPath || null;
+
   return (
     <div className="profile-row">
-      <div className="avatar-wrap">
-        {avatarPath ? (
+      <div
+        className="avatar-wrap"
+        style={{
+          background: 'var(--bg-block, #09090b)',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          position: 'relative',
+          flexShrink: 0,
+        }}
+      >
+        {avatarSrc ? (
           <img
             className="avatar-img"
-            src={avatarPath}
-            alt={displayName}
-            loading="lazy"
+            src={avatarSrc}
+            alt={displayName || 'Avatar'}
+            loading="eager"
+            decoding="async"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
+              backfaceVisibility: 'hidden',
+              transform: 'translateZ(0)',
+            }}
           />
         ) : (
           <svg

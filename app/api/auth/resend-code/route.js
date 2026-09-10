@@ -5,25 +5,46 @@
 import { NextResponse } from 'next/server';
 import { createEmailVerificationCode } from '@/lib/email-service';
 import { getUserByEmail } from '@/lib/user-repository';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 
 export async function POST(request) {
   try {
     const body = await request.json();
     const { email } = body;
 
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return NextResponse.json(
         { error: 'Email обязателен' },
         { status: 400 }
       );
     }
 
-    const user = getUserByEmail(email);
-    if (!user) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Троттлинг: максимум 1 запрос на повторную отправку в 60 секунд
+    const clientIp = getClientIp(request);
+    const rlKey = `resend_code:${normalizedEmail}:${clientIp}`;
+    const limit = checkRateLimit(rlKey, {
+      maxAttempts: 1,
+      windowMs: 60 * 1000,
+    });
+
+    if (!limit.allowed) {
       return NextResponse.json(
-        { error: 'Пользователь не найден' },
-        { status: 404 }
+        {
+          error: `Повторная отправка доступна через ${limit.retryAfterSeconds} сек.`,
+        },
+        { status: 429 }
       );
+    }
+
+    const user = getUserByEmail(normalizedEmail);
+    if (!user) {
+      // Нейтральный ответ для предотвращения энумерации
+      return NextResponse.json({
+        success: true,
+        message: 'Если указанный адрес зарегистрирован, новый код подтверждения отправлен на почту.',
+      });
     }
 
     if (user.isVerified) {
@@ -33,11 +54,10 @@ export async function POST(request) {
       );
     }
 
-    const verification = createEmailVerificationCode(email);
+    createEmailVerificationCode(normalizedEmail);
 
     return NextResponse.json({
       success: true,
-      demoCode: verification.code,
       message: 'Новый 6-значный код подтверждения отправлен на вашу почту.',
     });
   } catch (error) {

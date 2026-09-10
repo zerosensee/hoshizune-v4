@@ -131,9 +131,10 @@ export default function ProfileCard({ profile, canEdit, onEdit, onDelete }) {
               {profile.avatarPath ? (
                 <Image
                   src={profile.avatarPath}
-                  alt={profile.displayName}
+                  alt={profile.displayName || 'Avatar'}
                   width={48}
                   height={48}
+                  unoptimized={true}
                   className="profile-card__avatar"
                 />
               ) : (

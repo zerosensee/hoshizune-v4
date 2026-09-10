@@ -318,31 +318,18 @@ export function proxy(request) {
   }
 
   // Проверка cookie-сессии для защищённых административных маршрутов
+  // ТОЛЬКО валидная admin-сессия дает доступ (обычные пользователи не могут обращаться к админке)
   const adminToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const userToken = request.cookies.get(USER_SESSION_COOKIE_NAME)?.value;
-
-  const isAuthorized =
-    validateSessionToken(adminToken) || validateUserSessionToken(userToken);
+  const isAuthorized = validateSessionToken(adminToken);
 
   if (!isAuthorized) {
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Иди отсюда. У вас нет прав.' }, { status: 403 });
+      // Защита от энумерации: неавторизованные запросы ко всем админ-ручкам
+      // получают одинаковый 404 ответ (не раскрывает факт существования роутов)
+      return NextResponse.json({ error: 'Маршрут не найден' }, { status: 404 });
     }
 
-    // Если нет прав, смотрим откуда пришёл пользователь (Referer)
-    const referer = request.headers.get('referer');
-
-    if (referer) {
-      try {
-        const refererUrl = new URL(referer);
-        // Если реферер с нашего же сайта и не из админки — перенаправляем назад
-        if (!refererUrl.pathname.startsWith('/admin') && !refererUrl.hostname.startsWith('admin.')) {
-          return NextResponse.redirect(referer);
-        }
-      } catch {}
-    }
-
-    // Если прямо перешёл по ссылке admin.hoshizune.space без реферера — выдаём страницу ошибки
+    // Для браузерных запросов к /admin/* отдаём 403 страницу ошибки
     return new NextResponse(buildNoPermissionsHtml(), {
       status: 403,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },

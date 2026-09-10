@@ -16,6 +16,8 @@ import {
   updateProfile,
   deleteProfile,
   slugExists,
+  toPublicProfile,
+  sanitizeLinks,
 } from '@/lib/bio-repository';
 
 export async function GET(request) {
@@ -26,7 +28,10 @@ export async function GET(request) {
 
     if (slug) {
       const profile = getProfileBySlug(slug);
-      return NextResponse.json(profile);
+      if (!profile) {
+        return NextResponse.json({ error: 'Профиль не найден' }, { status: 404 });
+      }
+      return NextResponse.json(toPublicProfile(profile));
     }
 
     const user = await getCurrentUser();
@@ -45,10 +50,10 @@ export async function GET(request) {
         return NextResponse.json({ profile: null }, { status: 200 });
       }
 
-      return NextResponse.json({ profile: getProfileById(row.id) });
+      return NextResponse.json({ profile: toPublicProfile(getProfileById(row.id)) });
     }
 
-    const profiles = getAllProfiles();
+    const profiles = getAllProfiles().map(toPublicProfile);
     return NextResponse.json(profiles);
   } catch (error) {
     console.error('Ошибка получения профилей:', error);
@@ -101,10 +106,21 @@ export async function POST(request) {
       );
     }
 
-    // Фильтруем пустые пресетные ссылки
-    const cleanLinks = (links || []).filter(
-      (l) => l.url && l.url.trim() !== ''
-    );
+    // Проверка ссылок на недопустимые схемы (javascript:, data:, vbscript:)
+    if (Array.isArray(links)) {
+      for (const l of links) {
+        const urlStr = String(l?.url || '').trim().toLowerCase();
+        if (urlStr.startsWith('javascript:') || urlStr.startsWith('data:') || urlStr.startsWith('vbscript:') || urlStr.startsWith('file:')) {
+          return NextResponse.json(
+            { error: 'Недопустимая схема URL в ссылках профиля. Разрешены только http:// и https://' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    // Фильтруем и санитизируем ссылки
+    const cleanLinks = sanitizeLinks(links || []);
 
     const db = getDatabase();
     const existing = db
@@ -139,7 +155,7 @@ export async function POST(request) {
       profileId
     );
 
-    return NextResponse.json(profile, { status: 201 });
+    return NextResponse.json(toPublicProfile(profile), { status: 201 });
   } catch (error) {
     console.error('Ошибка создания профиля:', error);
     return NextResponse.json(
@@ -205,6 +221,19 @@ export async function PUT(request) {
       }
     }
 
+    // Проверка ссылок на недопустимые протоколы
+    if (Array.isArray(links)) {
+      for (const l of links) {
+        const urlStr = String(l?.url || '').trim().toLowerCase();
+        if (urlStr.startsWith('javascript:') || urlStr.startsWith('data:') || urlStr.startsWith('vbscript:') || urlStr.startsWith('file:')) {
+          return NextResponse.json(
+            { error: 'Недопустимая схема URL в ссылках профиля. Разрешены только http:// и https://' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     const updateData = {};
     if (displayName !== undefined) updateData.displayName = displayName;
     if (bioText !== undefined) updateData.bioText = bioText;
@@ -215,14 +244,12 @@ export async function PUT(request) {
     if (pinnedTrack !== undefined) updateData.pinnedTrack = pinnedTrack?.trim() || null;
     if (slug) updateData.slug = slug.toLowerCase();
     if (links !== undefined) {
-      updateData.links = (links || []).filter(
-        (l) => l.url && l.url.trim() !== ''
-      );
+      updateData.links = sanitizeLinks(links || []);
     }
 
     const updated = updateProfile(targetProfile.id, updateData);
 
-    return NextResponse.json({ profile: updated });
+    return NextResponse.json({ profile: toPublicProfile(updated) });
   } catch (error) {
     console.error('Ошибка обновления профиля:', error);
     return NextResponse.json(

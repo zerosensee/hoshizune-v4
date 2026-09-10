@@ -9,7 +9,7 @@ import {
   unauthorizedResponse,
 } from '@/lib/admin-auth';
 import {
-  getAllProfiles,
+  getAllProfilesAdmin,
   deleteProfile,
   createProfile,
   slugExists,
@@ -33,7 +33,7 @@ export async function GET(request) {
   const limit = parseInt(searchParams.get('limit') || '50', 10);
   const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-  let profiles = getAllProfiles();
+  let profiles = getAllProfilesAdmin();
 
   if (search) {
     const q = search.toLowerCase();
