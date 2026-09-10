@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import OnlineIndicator from './OnlineIndicator';
 import BadgesContainer from './BadgesContainer';
 import { getLevelBadge } from '@/lib/level-utils';
@@ -20,7 +21,7 @@ const STATUS_TEXT = {
  * @param {string} [props.role] - Запасная роль
  * @param {string} [props.titleId] - Запасной титул
  */
-export default function ProfileRow({
+function ProfileRow({
   displayName,
   avatarPath,
   effectiveStatus,
@@ -61,11 +62,13 @@ export default function ProfileRow({
       <div
         className="avatar-wrap"
         style={{
-          background: 'var(--bg-block, #09090b)',
+          background: 'transparent',
           borderRadius: '12px',
           overflow: 'hidden',
           position: 'relative',
           flexShrink: 0,
+          contain: 'paint',
+          isolation: 'isolate',
         }}
       >
         {avatarSrc ? (
@@ -74,14 +77,13 @@ export default function ProfileRow({
             src={avatarSrc}
             alt={displayName || 'Avatar'}
             loading="eager"
-            decoding="async"
+            decoding="sync"
             style={{
               width: '100%',
               height: '100%',
               objectFit: 'cover',
               display: 'block',
-              backfaceVisibility: 'hidden',
-              transform: 'translateZ(0)',
+              borderRadius: 'inherit',
             }}
           />
         ) : (
@@ -144,3 +146,5 @@ export default function ProfileRow({
     </div>
   );
 }
+
+export default memo(ProfileRow);
