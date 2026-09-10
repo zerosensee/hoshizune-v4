@@ -72,13 +72,13 @@ git push origin main
 git push backup main
 ```
 
-### На сервере (VPS):
+### На сервере (VPS) — если уже находитесь в папке репозитория:
 ```bash
-# Быстрое обновление одной командой:
-cd /var/www/hoshizune-dev && git pull && node scripts/security-cleanup.js && npm run build && pm2 restart hoshizune-dev
+git pull && node scripts/security-cleanup.js && npm run build && pm2 restart hoshizune-dev
+```
 
-# Либо по шагам:
-cd /var/www/hoshizune-dev
+По шагам:
+```bash
 git pull
 node scripts/security-cleanup.js
 npm run build
@@ -131,6 +131,12 @@ pm2 restart hoshizune-dev
     - Создан скрипт `scripts/security-cleanup.js`.
     - Ротированы все `account_token` пользователей.
     - Удалены тестовые аккаунты (`hoshizune_6f06`, `xss`, `matst`), тестовые подписки и тестовые короткие ссылки.
+12. **[UI/UX Fix] Устранение мерцания анимированного WebP аватара**:
+    - Замена `decoding="async"` на `decoding="sync"` в `ProfileRow.jsx` (устранение сброса кадрового буфера Chromium при 128 кадрах).
+    - Удаление `transform: translateZ(0)` и `backfaceVisibility: hidden`, сбрасывавших GPU-слои при repaint.
+    - Замена чёрного фона обёртки на `background: transparent`, добавление `contain: paint` и `isolation: isolate`.
+    - Оборачивание `ProfileRow` в `React.memo` от холостых рендеров.
+    - Добавление `Cache-Control: public, max-age=31536000, immutable` для статики `/uploads/*` в `next.config.mjs`.
 
 ---
 
