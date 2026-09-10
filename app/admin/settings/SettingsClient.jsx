@@ -9,6 +9,9 @@ import styles from '../admin.module.css';
 import { applyVisualFx } from '@/components/ThemeProvider';
 
 export default function SettingsClient({ settings: initialSettings }) {
+  const [whitelistEnabled, setWhitelistEnabled] = useState(
+    !!initialSettings?.whitelistEnabled
+  );
   const [allowedIps, setAllowedIps] = useState(
     initialSettings?.allowedIps || ['*']
   );
@@ -33,6 +36,9 @@ export default function SettingsClient({ settings: initialSettings }) {
     fetch('/api/admin/settings')
       .then((res) => res.json())
       .then((data) => {
+        if (typeof data.whitelistEnabled === 'boolean') {
+          setWhitelistEnabled(data.whitelistEnabled);
+        }
         if (data.allowedIps && Array.isArray(data.allowedIps)) {
           setAllowedIps(data.allowedIps);
         }
@@ -119,6 +125,7 @@ export default function SettingsClient({ settings: initialSettings }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          whitelistEnabled,
           allowedIps,
           allowLocalNetwork,
           sessionMaxAge: Number(sessionMaxAge),
@@ -127,8 +134,11 @@ export default function SettingsClient({ settings: initialSettings }) {
 
       const data = await res.json();
       if (res.ok) {
-        showToast(data.message || 'Настройки доступа и IP-вайтлиста успешно сохранены в БД!');
+        showToast(data.message || 'Настройки доступа успешно сохранены в БД!');
         if (data.settings) {
+          if (typeof data.settings.whitelistEnabled === 'boolean') {
+            setWhitelistEnabled(data.settings.whitelistEnabled);
+          }
           if (Array.isArray(data.settings.allowedIps)) {
             setAllowedIps(data.settings.allowedIps);
           }
@@ -381,15 +391,66 @@ export default function SettingsClient({ settings: initialSettings }) {
       >
         <div
           style={{
-            fontSize: '11px',
-            color: 'var(--accent, #4ade80)',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: '16px',
-            fontWeight: 600,
+            flexWrap: 'wrap',
+            gap: '12px',
           }}
         >
-          🛡️ Управление IP Белым Списком (Whitelist)
+          <div>
+            <div
+              style={{
+                fontSize: '11px',
+                color: 'var(--accent, #4ade80)',
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                fontWeight: 600,
+              }}
+            >
+              🛡️ Функция Белого Списка IP (Whitelist)
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted, #888)', marginTop: '4px' }}>
+              По умолчанию выключена. Когда выключена — доступ к сайту и панелям открыт для всех без ограничений.
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setWhitelistEnabled((prev) => !prev)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 600,
+              border: '1px solid',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              background: whitelistEnabled ? 'rgba(239, 68, 68, 0.15)' : 'rgba(74, 222, 128, 0.15)',
+              borderColor: whitelistEnabled ? '#ef4444' : '#4ade80',
+              color: whitelistEnabled ? '#f87171' : '#4ade80',
+            }}
+          >
+            {whitelistEnabled ? '🔴 Белый список: ВКЛЮЧЁН' : '⚪ Белый список: ВЫКЛЮЧЕН (По умолчанию)'}
+          </button>
+        </div>
+
+        {/* Индикатор статуса */}
+        <div
+          style={{
+            padding: '10px 14px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            marginBottom: '16px',
+            background: whitelistEnabled ? 'rgba(239, 68, 68, 0.08)' : 'rgba(74, 222, 128, 0.08)',
+            border: `1px solid ${whitelistEnabled ? 'rgba(239, 68, 68, 0.3)' : 'rgba(74, 222, 128, 0.3)'}`,
+            color: whitelistEnabled ? '#fca5a5' : '#86efac',
+          }}
+        >
+          {whitelistEnabled
+            ? '⚠️ Белый список активен! Доступ разрешён только адресам из списка ниже.'
+            : '✅ Белый список отключён: Доступ открыт со всех IP-адресов без ограничений.'}
         </div>
 
         <form

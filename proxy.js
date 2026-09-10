@@ -111,6 +111,10 @@ function getAdminConfig() {
  */
 function isAdminIpAllowed(ip) {
   const config = getAdminConfig();
+  // Функция белых списков отключена по умолчанию
+  if (!config || !config.whitelistEnabled) {
+    return true;
+  }
   const allowedIps = config?.allowedIps || ['*'];
   const allowLocalNetwork = config?.allowLocalNetwork !== false;
 
@@ -288,21 +292,22 @@ export function proxy(request) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || '';
 
-  // Проверка IP для всех входящих публичных и административных страниц/API
-  const clientIp = getClientIp(request);
-
-  if (!isAdminIpAllowed(clientIp)) {
-    return new NextResponse(build403Html(), {
-      status: 403,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
-  }
-
   const isAdminDomain = host.startsWith('admin.');
   const isAdminRoute =
     isAdminDomain ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/api/admin');
+
+  // Если это админский маршрут и включён белый список — проверяем IP
+  if (isAdminRoute) {
+    const clientIp = getClientIp(request);
+    if (!isAdminIpAllowed(clientIp)) {
+      return new NextResponse(build403Html(), {
+        status: 403,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
+    }
+  }
 
   if (!isAdminRoute) {
     return NextResponse.next();

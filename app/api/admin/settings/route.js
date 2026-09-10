@@ -22,6 +22,7 @@ export async function GET() {
   const config = getDbSettings();
 
   return NextResponse.json({
+    whitelistEnabled: !!config.whitelistEnabled,
     allowedIps: config.allowedIps || ['*'],
     allowLocalNetwork: !!config.allowLocalNetwork,
     adminSubdomain: config.adminSubdomain || 'admin.hoshizune.space',
@@ -41,6 +42,10 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const patch = {};
+
+    if (typeof body.whitelistEnabled === 'boolean') {
+      patch.whitelistEnabled = body.whitelistEnabled;
+    }
 
     if (Array.isArray(body.allowedIps)) {
       patch.allowedIps = body.allowedIps.map((ip) => ip.trim()).filter(Boolean);
@@ -67,6 +72,7 @@ export async function POST(request) {
       }
       const newConfig = {
         ...currentConfig,
+        whitelistEnabled: !!updated.whitelistEnabled,
         allowedIps: updated.allowedIps || ['*'],
         allowLocalNetwork: updated.allowLocalNetwork !== false,
       };

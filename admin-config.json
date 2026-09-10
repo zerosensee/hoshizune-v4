@@ -1,4 +1,5 @@
 {
+  "whitelistEnabled": false,
   "allowedIps": [
     "*"
   ],
