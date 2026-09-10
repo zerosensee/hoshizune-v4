@@ -12,9 +12,5 @@ export const metadata = {
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
-  if (!user) {
-    redirect('/auth');
-  }
-
   return <UserSettingsClient currentUser={user} />;
 }
